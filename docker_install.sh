@@ -34,5 +34,18 @@ else
     cp db-template.env db.env
     sed -i "s/db_user/$user/g" db.env
     sed -i "s/db_passwd/$dbpasswd/g" db.env
+
+    secret=`tr -dc 'a-z0-9-_' < /dev/urandom | head -c50`
+    sed -i "s/default_secret/'$secret'/g" db.env
+
+    while read -s -p "Enter a password for admin@example.com and press [ENTER]: " adminpasswd; do
+        if [ -z "$adminpasswd" ]; then
+            echo ""
+            continue
+        fi
+        break
+    done
+    sed -i "s/admin_password/$adminpasswd/g" db.env
+
     echo "Written DB environment file"
 fi

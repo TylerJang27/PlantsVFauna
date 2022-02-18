@@ -19,7 +19,7 @@ services:
     cap_drop:
       - all
     env_file:
-      - mqtt/server.env
+      - db.env
     volumes:
       - logs:/data/logs
     networks:
@@ -30,11 +30,11 @@ services:
       context: ./website
     restart: unless-stopped
     ports:
-      - 3000:3000
+      - 5000:5000
     cap_drop:
       - all
     env_file:
-      - website/server.env
+      - db.env
     volumes:
       - logs:/data/logs
     networks:
@@ -48,5 +48,4 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-  apinet:
     driver: bridge

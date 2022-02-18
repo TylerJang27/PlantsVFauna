@@ -1,0 +1,44 @@
+<header class="header-global">
+    <nav id="navbar-main" aria-label="Primary navigation" class="navbar navbar-main navbar-expand-lg navbar-theme-primary headroom navbar-dark">
+        <div class="container position-relative">
+            <a class="navbar-brand me-lg-5" href="{{ url_for('index.index') }}">
+                <img class="navbar-brand" src="/static/assets/img/logo.png" alt="Logo">
+            </a>
+            <div class="navbar-collapse collapse me-auto" id="navbar_global">
+                <div class="navbar-collapse-header">
+                    <div class="row">
+                        <div class="col-6 collapse-brand">
+                            <a href="{{ url_for('index.index') }}">
+                                <img src="/static/assets/img/logo.png" alt="Logo">
+                            </a>
+                        </div>
+                        <div class="col-6 collapse-close">
+                            <a href="#navbar_global" class="fas fa-times" data-bs-toggle="collapse" data-bs-target="#navbar_global" aria-controls="navbar_global" aria-expanded="false" title="close" aria-label="Toggle navigation"></a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="navbar-nav navbar-nav-hover align-items-lg-center">
+                    <li class="nav-item dropdown">
+                        <a href="{{ url_for('index.status') }}" class="nav-link" data-bs-toggle="dropdown" id="supportDropdown" aria-expanded="false">
+                            Home
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="sidenav">
+            {% block msg %}
+            <div style="color: aliceblue; text-align: right; margin-right: 25px">
+                {% if current_user.is_authenticated %}
+                Hello {{current_user.username}}! &nbsp &nbsp <a href="{{ url_for('users.logout') }}" type="button" class="btn btn-light">Log out</a>
+                {% else %}
+                <a href="{{ url_for('users.login') }}" type="button" class="btn btn-light">Log in</a>
+                {% endif %}
+            </div>
+            {% endblock %}
+        </div>
+        <div class="main">
+            {% block content %}{% endblock %}
+        </div>
+    </nav>
+</header>

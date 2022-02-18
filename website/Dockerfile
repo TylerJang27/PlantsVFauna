@@ -12,7 +12,5 @@ COPY ./requirements.txt /app/requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . /app
 
-# host mqtt
-RUN ls
-RUN pwd
-CMD echo "hello"
+# host website
+CMD flask run --host 0.0.0.0

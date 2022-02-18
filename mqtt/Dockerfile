@@ -13,6 +13,6 @@ RUN pip3 install -r requirements.txt
 COPY . /app
 
 # host mqtt
-RUN ls
-RUN pwd
-CMD echo "hello"; ls; pwd
+RUN echo $(ls)
+RUN echo $(pwd)
+CMD mosquitto

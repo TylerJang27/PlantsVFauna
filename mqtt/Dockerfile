@@ -15,4 +15,6 @@ COPY . /app
 # host mqtt
 RUN echo $(ls)
 RUN echo $(pwd)
-CMD mosquitto
+RUN useradd -ms /bin/bash test
+USER test
+CMD mosquitto -v

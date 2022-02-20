@@ -16,6 +16,16 @@
         </div>
 
         <div class="section section-md">
+            <form action="" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.device_id }}
+                <p>Turn ON</p>
+                {% for error in form.device_id.errors %}
+                    <br>
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                <p>{{ form.submit() }}</p>
+            </form>
             <div class="container">
                 {% for report in reports %}
                 <div class="row align-items-center">

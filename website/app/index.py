@@ -1,12 +1,16 @@
 from flask import render_template, redirect, flash, url_for
 from flask import current_app as app
 from flask_login import current_user
-from wtforms import StringField, SubmitField, SelectField
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, SelectField, BooleanField
 from wtforms.fields.core import IntegerField
 from wtforms.validators import Optional, ValidationError, DataRequired, NumberRange, Length
+from flask_babel import _, lazy_gettext as _l
 
 from flask import Blueprint
 from app.models.report import Report
+
+from app.pub import send_announcement
 
 
 bp = Blueprint('index', __name__)
@@ -24,10 +28,28 @@ def index():
     return render_template('index.html')
 
 
-@bp.route('/status')
+class ToggleForm(FlaskForm):
+    device_id = SelectField(_l('Device ID'), coerce=int)
+    turn_on = BooleanField(_l('Turn On'))
+    submit = SubmitField(_l('Turn On'))
+
+
+@bp.route('/status', methods=['GET', 'POST'])
 def status():
     if not current_user.is_authenticated:
         return redirect("/login", code=302)
     with app.db.make_session() as session:
-        reports = session.query(Report).all()  # TODO: PAGINATE
-        return render_template('status.html', reports=reports)
+        reports = session.query(Report).all()  # TODO: PAGINATE, FILTER
+        form = ToggleForm()
+        form.device_id.choices = [1, 2, 3]  # TODO: CHANGE TO JUST THE ONES WE WANT
+        if form.validate_on_submit():
+            print("PRE-SEND")
+            device_id = form.device_id.data
+            # is_on = form.turn_on.data
+            is_on = True
+            send_announcement(device_id, is_on)
+
+        return render_template('status.html', reports=reports, form=form)
+
+
+

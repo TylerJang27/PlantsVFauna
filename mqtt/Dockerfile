@@ -11,10 +11,9 @@ COPY ./requirements.txt /app/requirements.txt
 # install backend packages
 RUN pip3 install -r requirements.txt
 COPY . /app
+RUN echo $(ls)
 
 # host mqtt
-RUN echo $(ls)
-RUN echo $(pwd)
 RUN useradd -ms /bin/bash test
 USER test
-CMD mosquitto -v
+CMD ./start.sh

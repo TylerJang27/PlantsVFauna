@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Plants V. Fauna</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/img/fav_icon.png') }}"/>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/example.css') }}">
+  <style>
+    body {
+        font-family: "Lato", sans-serif;
+    }
+
+    .main-head {
+        height: 150px;
+        background: #FFF;
+    }
+
+    .sidenav {
+        /* height: 100%; */
+        background-color: #3c5aa6;
+        overflow-x: hidden;
+        /* padding-top: 20px; */
+    }
+
+    .main {
+        padding: 0px 10px;
+    }
+
+    .login-main-text {
+        margin-top: 20%;
+        padding: 60px;
+        color: #fff;
+    }
+
+    .login-main-text h2 {
+        font-weight: 300;
+    }
+
+    .btn-black {
+        background-color: #000 !important;
+        color: #fff;
+    }
+  </style>
+</head>
+{% include 'navbar.html' %}
+<body>
+  <div class="sidenav">
+    {% block msg %}
+      <div style="color: aliceblue; text-align: right; margin-bottom: 25px; margin-right: 25px">
+        {% if current_user.is_authenticated %}
+          Hello {{current_user.username}}! <a href="{{ url_for('users.logout') }}" type="button" class="btn btn-light">Log out</a>
+        {% else %}
+          <a href="{{ url_for('users.login') }}" type="button" class="btn btn-light">Log in</a>
+        {% endif %}
+      </div>
+    {% endblock %}
+  </div>
+  <div class="main">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+
+</html>

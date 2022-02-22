@@ -1,0 +1,51 @@
+version: "3.3"
+services:
+  database:
+    image: postgres:14
+    restart: always
+    env_file:
+      - db.env
+    volumes:
+      - database-data:/var/lib/postgresql/data/
+    networks:
+      backnet:
+        ipv4_address: 172.20.0.10
+  mqtt:
+    build: 
+      context: ./mqtt
+    restart: unless-stopped
+    ports:
+      - 1883:1883
+    cap_drop:
+      - all
+    env_file:
+      - db.env
+    volumes:
+      - logs:/data/logs
+    networks:
+      backnet:
+        ipv4_address: 172.20.0.2
+  website:
+    build: 
+      context: ./website
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+    cap_drop:
+      - all
+    env_file:
+      - db.env
+    volumes:
+      - logs:/data/logs
+    networks:
+      backnet:
+        ipv4_address: 172.20.0.3
+volumes:
+  database-data: {}
+  logs: {}
+networks:
+  backnet:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+    driver: bridge

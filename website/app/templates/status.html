@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <main>
+        <!-- Hero -->
+        <div class="section-header pb-6 text-black">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-12 text-left mb-3 mt-4">
+                        <h2>Plants v. Fauna</h2>
+                        <h1>Status</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-md">
+            <form action="" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.device_id }}
+                <p>Turn ON</p>
+                {% for error in form.device_id.errors %}
+                    <br>
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+                <p>{{ form.submit() }}</p>
+            </form>
+            <div class="container">
+                {% for report in reports %}
+                <div class="row align-items-center">
+                    <div class="col-1" style="text-align: center;">
+                        <p>{{loop.index}}</p>
+                    </div>
+                    <div class="col-3">
+                        <p class="mb-1">{{report.device_id}}</p>
+                    </div>
+                    <div class="col-3"> 
+                        <p class="mb-1">{{report.status}}</p>
+                    </div>
+                    <div class="col-1">
+                        <p class="mb-1">{{report.battery}}</p>
+                    </div>
+                    <div class="col-4">
+                        <p class="mb-1">{{report.description}}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+{% endblock %}

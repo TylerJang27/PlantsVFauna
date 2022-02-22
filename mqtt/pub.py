@@ -1,11 +1,12 @@
 # python3.6
 
 import random
+import time
 
 from paho.mqtt import client as mqtt_client
 
 
-broker = '10.197.54.17'  # TODO: DOES THIS SUPPORT DNS
+broker = '127.0.0.1'
 port = 1883
 topic = "/plant"
 # generate client ID with pub prefix randomly

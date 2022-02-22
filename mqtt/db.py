@@ -1,9 +1,8 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from app.config import Config
+from mqtt.config import Config
 
-from app.models.base import Base
-from app.models.user import User
+from mqtt.models.base import Base
 
 
 class DB:
@@ -15,16 +14,6 @@ class DB:
         self.Session = sessionmaker(bind=self.engine)
         Session = self.Session()
         Session.commit()
-
-        self.create_dummy_user()
-    
-    def create_dummy_user(self):
-        if Config.INITIAL_USER:
-            with self.make_session() as session:
-                if session.query(User).count() == 0:
-                    new_user = User(0, "admin@example.com", "Frank Tang", Config.ADMIN_PASSWORD)
-                    session.add(new_user)
-                    session.commit()
 
     def connect(self):
         return self.engine.connect()

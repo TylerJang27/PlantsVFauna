@@ -45,12 +45,13 @@ def run():
     publish(client)
 
 
+# TODO: ADD ADDITIONAL METHODS DEPENDING ON BEHAVIOR
 def send_announcement(device_id, turn_on):
     try:
-        msg = "turn {} device {}".format("ON" if turn_on else "OFF", device_id)
+        msg = "HI turn {} device {}".format("ON" if turn_on else "OFF", device_id)
         print("SENDING MESSAGE")
         client = connect_mqtt()
-        client.loop_start()  # TODO: TROUBLESHOOT THIS
+        # client.loop_start()  # TODO: TROUBLESHOOT THIS
         publish(client, device_id, msg)
     except Exception as e:
         print(e)

@@ -9,6 +9,7 @@ from flask_babel import _, lazy_gettext as _l
 
 from flask import Blueprint
 from app.models.report import Report
+from app.models.device import Device
 
 from app.pub import send_announcement
 
@@ -41,7 +42,7 @@ def status():
     with app.db.make_session() as session:
         reports = session.query(Report).all()  # TODO: PAGINATE, FILTER
         form = ToggleForm()
-        form.device_id.choices = [1, 2, 3]  # TODO: CHANGE TO JUST THE ONES WE WANT
+        form.device_id.choices = [d.device_id for d in session.query(Device).all()]
         if form.validate_on_submit():
             print("PRE-SEND")
             device_id = form.device_id.data

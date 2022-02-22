@@ -1,8 +1,16 @@
+#!/usr/bin/env python3
 # python3.6
 
 import random
 
 from paho.mqtt import client as mqtt_client
+from mqtt.models.device import Device
+from mqtt.models.report import Report
+
+from mqtt.models.base import Base
+from mqtt.config import Config
+from mqtt.db import DB
+import time
 
 
 # broker = '10.197.54.17'
@@ -13,6 +21,16 @@ topic = "/plant"
 client_id = f'python-mqtt-{random.randint(0, 100)}'
 username = 'test'
 password = 'test'
+config = Config()
+db = DB()
+
+def handle_message(userdata, msg):
+    with db.make_session() as session:
+        # TODO: TRIAGE BASED ON MESSAGE TYPE
+        pass
+        # obj = obj
+        # session.add(obj)
+        # session.commit()
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -30,7 +48,9 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        print(f"Received {msg.payload.decode()} from {msg.topic} topic")
+        print("AHA!")
+        print(f"Received {msg.payload.decode()} from {msg.topic} topic with {userdata}")
+        handle_message(userdata, msg)
 
     client.subscribe(topic)
     client.on_message = on_message
@@ -51,4 +71,6 @@ def run():
 
 
 if __name__ == '__main__':
+    time.sleep(2)
+    print("HEYO")
     run()

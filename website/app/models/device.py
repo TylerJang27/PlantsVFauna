@@ -7,8 +7,9 @@ class Device(Base):
     __tablename__ = 'device'
 
     device_id = Column(Integer, primary_key=True)
-    manual_on = Column(Boolean, server_default=True, nullable=True)
+    manual_on = Column(Boolean, server_default=True, nullable=True)  # includes out of power
     remote_on = Column(Boolean, server_default=True, nullable=True)
+    battery = Column(Integer, nullable=False, server_default=100)
 
     reports = relationship("Report", back_populates="device")
 

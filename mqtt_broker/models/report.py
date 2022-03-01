@@ -16,6 +16,12 @@ class Report(Base):
     device = relationship("Device", back_populates="reports")
 
 
+    def __init__(self, device_id, status, description, battery):
+        self.device_id = device_id
+        self.status = status
+        self.description = description
+        self.battery = battery
+
     def __repr__(self):
         return "<Report(report_id='%d', device_id='%d', report_status='%s', report_battery='%d')>" % (
                              self.uid, self.device_id, "N/A" if self.status is None else self.status, "N/A" if self.battery is None else self.battery)

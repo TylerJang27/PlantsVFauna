@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, Sequence, String, ForeignKey
+from sqlalchemy import Column, Integer, DateTime, Sequence, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import Base
+from sqlalchemy import func
 
 
 class Report(Base):
@@ -12,6 +13,7 @@ class Report(Base):
     status = Column(String(50), nullable=True)
     description = Column(String(255), nullable=False)
     battery = Column(Integer, nullable=True)
+    time = Column(DateTime(timezone=True), server_default=func.now())
 
     device = relationship("Device", back_populates="reports")
 

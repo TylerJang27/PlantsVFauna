@@ -8,7 +8,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    app.db = DB(app)
+    app.db = DB()
 
     login.init_app(app)
     babel.init_app(app)

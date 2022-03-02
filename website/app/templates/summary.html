@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <main>
+        <!-- Hero -->
+        <div class="section-header pb-6 text-black">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-12 text-left mb-3 mt-4">
+                        <h2>Plants v. Fauna</h2>
+                        <h1>Summary</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section section-md">
+            <select onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
+                <option value="">Select Device...</option>
+                {% for device in devices %}
+                <option value="{{ url_for('index.detail', device=device, page=0) }}">{{device}}</option>
+                {% endfor %}
+              </select>
+
+            <div class="container">
+                {% for report in reports %}
+                <div class="row align-items-center">
+                    <div class="col-1" style="text-align: center;">
+                        <p>{{loop.index}}</p>
+                    </div>
+                    <div class="col-3">
+                        <p class="mb-1">{{report.device_id}}</p>
+                    </div>
+                    <div class="col-3"> 
+                        <p class="mb-1">{{report.status}}</p>
+                    </div>
+                    <div class="col-1">
+                        <p class="mb-1">{{report.battery}}</p>
+                    </div>
+                    <div class="col-4">
+                        <p class="mb-1">{{report.description}}</p>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% if has_prev %}
+                <li>
+                    <a href="{{ url_for('index.status', page=page-1) }}">Previous</a>
+                </li>
+                {% endif %}
+
+                {% if has_next %}
+                <li>
+                    <a href="{{ url_for('index.status', page=page+1) }}">Next</a></li>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+{% endblock %}

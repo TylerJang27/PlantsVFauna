@@ -9,7 +9,7 @@
                 <div class="row justify-content-center">
                     <div class="col-12 text-left mb-3 mt-4">
                         <h2>Plants v. Fauna</h2>
-                        <h1>Status</h1>
+                        <h1>Detail {{device.device_id}}</h1>
                     </div>
                 </div>
             </div>
@@ -18,13 +18,19 @@
         <div class="section section-md">
             <form action="" method="post">
                 {{ form.hidden_tag() }}
-                {{ form.device_id }}
-                <p>Turn ON</p>
-                {% for error in form.device_id.errors %}
+                {% if device.manual_on %}
+                    {% if device.remote_on %}
+                        <p>Turn Off{{ form.submit() }}</p>
+                    {% else %}
+                        <p>Turn On{{ form.submit() }}</p>
+                    {% endif %}
+                {% else %}
+                    <p>Device is off or out of power</p>
+                {% endif %}
+                {% for error in form.turn_on.errors %}
                     <br>
                     <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
-                <p>{{ form.submit() }}</p>
             </form>
             <div class="container">
                 {% for report in reports %}
@@ -32,8 +38,11 @@
                     <div class="col-1" style="text-align: center;">
                         <p>{{loop.index}}</p>
                     </div>
-                    <div class="col-3">
+                    <div class="col-1">
                         <p class="mb-1">{{report.device_id}}</p>
+                    </div>
+                    <div class="col-2">
+                        <p class="mb-1">{{report.time}}</p>
                     </div>
                     <div class="col-3"> 
                         <p class="mb-1">{{report.status}}</p>
@@ -46,6 +55,18 @@
                     </div>
                 </div>
                 {% endfor %}
+
+                {% if has_prev %}
+                <li>
+                    <a href="{{ url_for('index.detail', device=device.device_id, page=page-1) }}">Previous</a>
+                </li>
+                {% endif %}
+
+                <!-- next page -->
+                {% if has_next %}
+                <li>
+                    <a href="{{ url_for('index.detail', device=device, page=page+1) }}">Next</a></li>
+                {% endif %}
             </div>
         </div>
     </main>

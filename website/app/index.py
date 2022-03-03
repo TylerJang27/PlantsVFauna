@@ -17,6 +17,7 @@ from sqlalchemy.exc import OperationalError
 
 
 bp = Blueprint('index', __name__)
+PAGE_SIZE = 10
 
 
 def post_on_off():
@@ -38,8 +39,8 @@ def summary(page=0):
         return redirect("/login", code=302)
     with app.db.make_session() as session:
         try:
-            reports = session.query(Report).order_by(Report.time.desc()).offset(page*20).limit(20)
-            has_next = session.query(Report).order_by(Report.time.desc()).count() > (page+1)*20
+            reports = session.query(Report).order_by(Report.time.desc()).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
+            has_next = session.query(Report).order_by(Report.time.desc()).count() > (page+1)*PAGE_SIZE
             has_prev = page > 0
         except OperationalError:
             flash("No users in the database.")
@@ -60,8 +61,8 @@ def detail(device, page=0):
         return redirect("/login", code=302)
     with app.db.make_session() as session:
         try:
-            reports = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).offset(page*20).limit(20)
-            has_next = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).count() > (page+1)*20
+            reports = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
+            has_next = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).count() > (page+1)*PAGE_SIZE
             has_prev = page > 0
         except OperationalError:
             if page > 0:

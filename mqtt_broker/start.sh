@@ -12,5 +12,5 @@
 # echo "$output"
 
 mosquitto -v &
-python3 sub.py &
+python3 . &
 wait

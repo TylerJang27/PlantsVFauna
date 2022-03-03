@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Sequence, String, ForeignKey
+from sqlalchemy import Column, DateTime, Integer, Sequence, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 
@@ -12,15 +12,17 @@ class Report(Base):
     status = Column(String(50), nullable=True)
     description = Column(String(255), nullable=False)
     battery = Column(Integer, nullable=True)
+    time = Column(DateTime, nullable=True)
 
     device = relationship("Device", back_populates="reports")
 
 
-    def __init__(self, device_id, status, description, battery):
+    def __init__(self, device_id, status, description, battery, time):
         self.device_id = device_id
         self.status = status
         self.description = description
         self.battery = battery
+        self.time = time
 
     def __repr__(self):
         return "<Report(report_id='%d', device_id='%d', report_status='%s', report_battery='%d')>" % (

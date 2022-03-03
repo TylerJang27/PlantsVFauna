@@ -75,7 +75,7 @@ def detail(device, page=0):
         form.turn_on = not device.remote_on
         if form.validate_on_submit():
             print("PRE-SEND")
-            is_on = form.turn_on.data
-            send_announcement(device, is_on)
+            is_on = form.turn_on
+            send_announcement(device.device_id, is_on)
 
         return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev)

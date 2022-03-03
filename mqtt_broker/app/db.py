@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from mqtt.config import Config
+from app.config import Config
 
-from mqtt.models.base import Base
+from app.models.base import Base
 
 
 class DB:

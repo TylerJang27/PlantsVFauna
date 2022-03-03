@@ -8,23 +8,23 @@ import numpy as np
 
 
 from paho.mqtt import client as mqtt_client
-from mqtt.models.device import Device
-from mqtt.models.report import Report
-from mqtt.models.base import Base
-from mqtt.config import Config
-from mqtt.db import DB
-from mqtt.message_enum import MessageType as mt
+from app.models.device import Device
+from app.models.report import Report
+from app.models.base import Base
+from app.config import Config
+from app.db import DB
+from app.message_enum import MessageType as mt
 import time
 
 
 # broker = '10.194.90.55'
 broker = '127.0.0.1'
 port = 1883
-topic = "/plant"
+topic = "/plant"  # TODO: CHANGE TO /plant/#
 # generate client ID with pub prefix randomly
-client_id = f'python-mqtt-{random.randint(0, 100)}'
-username = 'test'
-password = 'test'
+client_id = f'python-mqtt-broker2-{random.randint(0, 100)}'
+username = 'test2'
+password = 'test2'
 config = Config()
 db = DB()
 
@@ -36,6 +36,11 @@ def triage_message(userdata, msg):
         device_id = obj_in['device_id']
         description = obj_in['description']
         battery = obj_in['battery']
+        try:
+            time = dt.fromisoformat(obj_in['time'])
+        except:
+            print("COULDN'T PARSE TIME")
+            time = None
     
     except Exception as e:
         print("Error occurred on message triage:")
@@ -47,7 +52,7 @@ def triage_message(userdata, msg):
         if type_enum == mt.message or type_enum == mt.report:
             # Pest detected or Daily report
             status = "Pest detected" if type_enum == mt.message else "Daily report"
-            report = Report(device_id, status, description, battery)
+            report = Report(device_id, status, description, battery, time)
             session.add(report)
         elif type_enum == mt.battery:
             # Battery update
@@ -94,11 +99,11 @@ def connect_mqtt() -> mqtt_client:
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print("AHA!")
-        print(f"Received {msg.payload.decode()} from {msg.topic} topic with {userdata}")
+        print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
         triage_message(userdata, msg)
 
-    client.subscribe(topic)
     client.on_message = on_message
+    client.subscribe(topic)
 
 
 def subscribe_thermal(client: mqtt_client):
@@ -121,13 +126,8 @@ def subscribe_image(client: mqtt_client):
     client.subscribe(topic)
     client.on_message = on_message
 
-def run():
+def main():
     client = connect_mqtt()
-    subscribe_thermal(client)
-    client.loop_forever()
-
-
-if __name__ == '__main__':
-    time.sleep(2)
-    print("HEYO")
-    run()
+    subscribe(client)
+    # subscribe_thermal(client)
+    client.loop_start()

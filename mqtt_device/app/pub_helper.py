@@ -12,7 +12,7 @@ TIMESTAMP_KEY = "time"
 def serialize_json(message_type, description):
     out = {DEVICE_KEY: get_id(), TYPE_KEY: message_type,
            BATTERY_KEY: get_battery(), DESCRIPTION_KEY: description,
-           TIMESTAMP_KEY: dt.now()}
+           TIMESTAMP_KEY: str(dt.now())}
     return json.dumps(out)
 
 

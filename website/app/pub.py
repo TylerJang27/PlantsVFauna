@@ -70,7 +70,7 @@ def send_announcement(device_id, turn_on):
         client.loop_start()  # TODO: TROUBLESHOOT THIS
         publish(client, device_id, msg)
 
-        time.sleep(1)
+        time.sleep(5)
         client.loop_stop()
     except Exception as e:
         print(e)

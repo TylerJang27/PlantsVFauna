@@ -26,6 +26,8 @@ If not specified for backup, will save to current directory."
 
 POSITIONAL_ARGS=()
 
+echo "Running command"
+
 if [[ $# -gt 0 ]]; then
   case $1 in
     d|delete)

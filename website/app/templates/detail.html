@@ -85,7 +85,7 @@
                 <!-- next page -->
                 {% if has_next %}
                 <li>
-                    <a href="{{ url_for('index.detail', device=device, page=page+1) }}">Next</a></li>
+                    <a href="{{ url_for('index.detail', device=device.device_id, page=page+1) }}">Next</a></li>
                 {% endif %}
             </div>
         </div>

@@ -78,5 +78,5 @@ def detail(device, page=0):
             print("PRE-SEND")
             is_on = form.turn_on
             send_announcement(device.device_id, is_on)
-
-        return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev)
+        # TODO: FIX NUMBERING COLUMN
+        return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page)

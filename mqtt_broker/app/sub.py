@@ -14,7 +14,9 @@ from app.models.base import Base
 from app.config import Config
 from app.db import DB
 from app.message_enum import MessageType as mt
+from datetime import datetime as dt
 import time
+import json
 
 
 # broker = '10.194.90.55'
@@ -31,15 +33,16 @@ db = DB()
 
 def triage_message(userdata, msg):
     try:
-        obj_in = json.loads(msg)
+        print("msg is ", msg.payload.decode())
+        obj_in = json.loads(msg.payload.decode())
         type_enum = mt[obj_in['type']]
         device_id = obj_in['device_id']
         description = obj_in['description']
         battery = obj_in['battery']
         try:
             time = dt.fromisoformat(obj_in['time'])
-        except:
-            print("COULDN'T PARSE TIME")
+        except Exception as e:
+            print("COULDN'T PARSE TIME", e)
             time = None
     
     except Exception as e:
@@ -48,10 +51,11 @@ def triage_message(userdata, msg):
         return
 
     with db.make_session() as session:
-        device = session.query(Device).filter(Device.device_id == device_id)
-        if type_enum == mt.message or type_enum == mt.report:
+        device = session.query(Device).filter(Device.device_id == device_id).one_or_none()
+        if type_enum == mt.pest or type_enum == mt.report:
             # Pest detected or Daily report
-            status = "Pest detected" if type_enum == mt.message else "Daily report"
+            status = "Pest detected" if type_enum == mt.pest else "Daily report"
+            # TODO: FIX REPORT PRIMARY KEY
             report = Report(device_id, status, description, battery, time)
             session.add(report)
         elif type_enum == mt.battery:
@@ -130,4 +134,4 @@ def main():
     client = connect_mqtt()
     subscribe(client)
     # subscribe_thermal(client)
-    client.loop_start()
+    client.loop_forever()

@@ -31,10 +31,10 @@ def connect_mqtt():
 
 def publish_json(client, json_obj):
     # TODO: ADD ERROR HANDLING
-    client.publish(client, json_obj)
+    result = client.publish(topic, json_obj)
     status = result[0]
     if status == 0:
-        print(f"Send `{msg}` to topic `{topic}`")
+        print(f"Send `{json_obj}` to topic `{topic}`")
     else:
         print(f"Failed to send message to topic {topic}")
 

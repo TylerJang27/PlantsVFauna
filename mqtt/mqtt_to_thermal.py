@@ -8,7 +8,7 @@ import re
 import cv2
 import matplotlib.pyplot as plt
 
-image_buffer = []
+
 
 def create_test_communication():
     comm_list = []
@@ -24,28 +24,36 @@ def parse_comms(comm_list):
     return index_list 
 
 def read_file():
+
     f = open("copy.txt", "r")
+    image_buffer = []
     lines = f.readlines()
-    index = 0
-    while index < len(lines):
-        if lines[index].strip().find("t=0") != -1:
-            new_image_buffer = []
-            new_image_buffer.append(int(lines[index].strip()[lines[index].strip().find("i:") + 2:]))
-            while lines[index].strip().find("t=767") == -1:
-                index += 1
+    print(lines[-1].strip().find("t=767"))
+    if lines[-1].strip().find("t=767") == 0:
+        print("asdfasd")
+        index = 0
+        while index < len(lines):
+            if lines[index].strip().find("t=0") != -1:
+                new_image_buffer = []
                 new_image_buffer.append(int(lines[index].strip()[lines[index].strip().find("i:") + 2:]))
-        image_buffer.append(new_image_buffer)
-        index += 1
+                while lines[index].strip().find("t=767") == -1:
+                    index += 1
+                    new_image_buffer.append(int(lines[index].strip()[lines[index].strip().find("i:") + 2:]))
+            image_buffer.append(new_image_buffer)
+            index += 1
     f.close()
+    return image_buffer
 
 
 def copy_file():
+    print("copy")
     original = r'C:\Users\Frank\Desktop\ECE449\PlantsVFauna\mqtt\output.txt'
     target = r'C:\Users\Frank\Desktop\ECE449\PlantsVFauna\mqtt\copy.txt'
     shutil.copyfile(original, target)
     return target
 
 def make_image(raw_values, index):
+    print("imagessss")
     # Enter the image height and width
     height = int(len(raw_values))
     width  = int(len(raw_values[0]))
@@ -91,9 +99,11 @@ def make_image(raw_values, index):
             im[row,col] = (B,G,R)
     # Save to disk
     string = "image" + str(index) + ".png"
+
     cv2.imwrite(string, im)
 
 def make_numpy_array(image_list):
+    print("fasdfa")
     image_array = np.array(image_list)
     np_image = np.reshape(image_array, (24, 32))
     print(np_image)

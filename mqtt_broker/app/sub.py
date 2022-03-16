@@ -18,6 +18,11 @@ from datetime import datetime as dt
 import time
 import json
 
+from mqtt_to_thermal import copy_file
+from mqtt_to_thermal import read_file
+from mqtt_to_thermal import make_image
+from mqtt_to_thermal import make_numpy_array
+
 
 # broker = '10.194.90.55'
 broker = '127.0.0.1'
@@ -102,7 +107,6 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        print("AHA!")
         print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
         triage_message(userdata, msg)
 
@@ -110,12 +114,30 @@ def subscribe(client: mqtt_client):
     client.subscribe(topic)
 
 
+def subscribe_regular(client: mqtt_client):
+    def on_message(client, userdata, msg):
+        raw_message = msg.payload.decode()
+        with open('json_data.json', 'w') as outfile:
+            outfile.write(raw_message)
+
+
+    client.subscribe(topic)
+    client.on_message = on_message
+
+
 def subscribe_thermal(client: mqtt_client):
     def on_message(client, userdata, msg):
         f = open("output.txt", "a")
         f.write(msg.payload.decode() + "\n")
         f.close()
-        print(msg.payload.decode())
+        # print(msg.payload.decode())
+        if msg.payload.decode().find("t=767") != -1:
+            copy_file()
+            image_buffer = read_file()
+            print(image_buffer)
+            for index in range(len(image_buffer)):
+                raw_values = make_numpy_array(image_buffer[index])
+                make_image(raw_values, index)
 
     client.subscribe(topic)
     client.on_message = on_message
@@ -132,6 +154,9 @@ def subscribe_image(client: mqtt_client):
 
 def main():
     client = connect_mqtt()
-    subscribe(client)
-    # subscribe_thermal(client)
+    f = open("output.txt", "w")
+    f.close()
+    # subscribe_thermal(client)  # ORIGINAL THERMAL CODE
+    # subscribe(client)  # DB PROCESSING
+    subscribe_regular(client)  # FRANK'S WRITING CODE
     client.loop_forever()

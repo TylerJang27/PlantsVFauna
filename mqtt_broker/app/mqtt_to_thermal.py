@@ -99,7 +99,7 @@ def make_image(raw_values, index):
             R, G, B = get_color(value)
             im[row,col] = (B,G,R)
     # Save to disk
-    string = "image" + str(index) + ".png"
+    string = "/data/images/image" + str(index) + ".png"
 
     cv2.imwrite(string, im)
 
@@ -129,9 +129,11 @@ def parse_json(filename):
 def output_image(file):
     image_buffer = parse_json(file)
     # TODO: TEST THIS PARSING
-    for index in range(len(image_buffer)):
-        raw_values = make_numpy_array(image_buffer[index])
-        make_image(raw_values, index)
+    # for index in range(len(image_buffer)):
+        # raw_values = make_numpy_array(image_buffer[index])
+        # make_image(raw_values, index)
+    raw_values = make_numpy_array(image_buffer)
+    make_image(raw_values, random.randint(0, 100))
 
 if __name__ == "__main__":
     # copy_file()

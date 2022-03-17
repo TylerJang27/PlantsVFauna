@@ -155,6 +155,9 @@ def subscribe_image(client: mqtt_client):
 def main():
     client = connect_mqtt()
 
+    # with open('json_data.json', 'w') as outfile:
+        # outfile.write("test")
+
     # THERMAL
     # f = open("output.txt", "w")
     # f.close()

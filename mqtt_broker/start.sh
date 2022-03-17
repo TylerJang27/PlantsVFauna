@@ -11,4 +11,8 @@
 # IFS= read -d '' -u 3 output
 # echo "$output"
 
+echo $(ls)
+echo "heyo"
+echo $(ls app)
+
 python3 .

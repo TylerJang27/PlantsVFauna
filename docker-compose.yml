@@ -36,6 +36,7 @@ services:
       - db.env
     volumes:
       - logs:/data/logs
+      - images:/data/images
     networks:
       backnet:
         ipv4_address: 172.20.0.5
@@ -57,6 +58,7 @@ services:
 volumes:
   database-data: {}
   logs: {}
+  images: {}
 networks:
   backnet:
     ipam:

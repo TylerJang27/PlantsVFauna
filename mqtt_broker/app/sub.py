@@ -18,14 +18,11 @@ from datetime import datetime as dt
 import time
 import json
 
-from mqtt_to_thermal import copy_file
-from mqtt_to_thermal import read_file
-from mqtt_to_thermal import make_image
-from mqtt_to_thermal import make_numpy_array
-
+from app.mqtt_to_thermal import copy_file, read_file, make_image, make_numpy_array
+from app.mqtt_to_thermal import output_image
 
 # broker = '10.194.90.55'
-broker = '127.0.0.1'
+broker = '172.20.0.2'
 port = 1883
 topic = "/plant"  # TODO: CHANGE TO /plant/#
 # generate client ID with pub prefix randomly
@@ -48,7 +45,7 @@ def triage_message(userdata, msg):
             time = dt.fromisoformat(obj_in['time'])
         except Exception as e:
             print("COULDN'T PARSE TIME", e)
-            time = None
+            time = dt.now()
     
     except Exception as e:
         print("Error occurred on message triage:")
@@ -119,8 +116,11 @@ def subscribe_regular(client: mqtt_client):
         raw_message = msg.payload.decode()
         with open('json_data.json', 'w') as outfile:
             outfile.write(raw_message)
+        output_image('json_data.json')
 
-
+        print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
+        triage_message(userdata, msg)
+        time.sleep(2)  # TODO: REMOVE TIME STOP
     client.subscribe(topic)
     client.on_message = on_message
 
@@ -154,9 +154,16 @@ def subscribe_image(client: mqtt_client):
 
 def main():
     client = connect_mqtt()
-    f = open("output.txt", "w")
-    f.close()
+
+    # THERMAL
+    # f = open("output.txt", "w")
+    # f.close()
     # subscribe_thermal(client)  # ORIGINAL THERMAL CODE
+
+    # DB PROCESSING
     # subscribe(client)  # DB PROCESSING
+
+    # IMAGE WRITING
     subscribe_regular(client)  # FRANK'S WRITING CODE
+
     client.loop_forever()

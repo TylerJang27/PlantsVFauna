@@ -10,9 +10,10 @@ services:
     networks:
       backnet:
         ipv4_address: 172.20.0.10
-  mqtt:
-    build: 
+  broker:
+    build:
       context: ./mqtt_broker
+      dockerfile: Dockerfile-broker
     restart: unless-stopped
     ports:
       - 1883:1883
@@ -25,6 +26,19 @@ services:
     networks:
       backnet:
         ipv4_address: 172.20.0.2
+  mqtt:
+    build: 
+      context: ./mqtt_broker
+    restart: unless-stopped
+    cap_drop:
+      - all
+    env_file:
+      - db.env
+    volumes:
+      - logs:/data/logs
+    networks:
+      backnet:
+        ipv4_address: 172.20.0.5
   website:
     build: 
       context: ./website

@@ -11,6 +11,4 @@
 # IFS= read -d '' -u 3 output
 # echo "$output"
 
-mosquitto -v &
-python3 . &
-wait
+python3 .

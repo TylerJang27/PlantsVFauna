@@ -119,19 +119,22 @@ def parse_json(filename):
     out = []
     data = json.load(f)
     for row in data:
-        out += data[row]
+        if row.startswith("camValue"):
+            out += data[row]
     return out
 
 
 
 # TODO: DON'T TOUCH THIS MAIN STUFF, BUT MAKE THE PARALLEL FUNCTION CODE RUN AUTOMATICALLY
-
-if __name__ == "__main__":
-    copy_file()
-    read_file()
-
-    image_buffer = parse_json("json_data.json")
+def output_image(file):
+    image_buffer = parse_json(file)
     # TODO: TEST THIS PARSING
     for index in range(len(image_buffer)):
         raw_values = make_numpy_array(image_buffer[index])
         make_image(raw_values, index)
+
+if __name__ == "__main__":
+    # copy_file()
+    # read_file()
+    output_image("json_data.json")
+    

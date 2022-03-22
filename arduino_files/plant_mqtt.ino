@@ -86,11 +86,21 @@ void setup() {
   Serial.println("Connected to WiFi.");
 
   client.setServer(mqttServer, mqttPort);
+  client.setCallback(callback);
+
+  // String willPayload = "err";
+  // bool willRetain = true;
+  // int willQos = 1;
+
+  // mqttClient.beginWill("/plant", willPayload.length(), willRetain, willQos);
+  // mqttClient.print(willPayload);
+  // mqttClient.endWill();
 
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
     if (client.connect("ESP32Client", mqttUser, mqttPassword )) {
       Serial.println("MQTT connected");
+      client.subscribe("/plant", 1);
     } else {
       Serial.print("failed with state ");
       Serial.print(client.state());
@@ -116,8 +126,34 @@ void setup() {
 
 }
 
+void callback(char* topic, byte* message, unsigned int length) {
+  Serial.print("Message arrived on topic: ");
+  Serial.print(topic);
+  Serial.print(". Message: ");
+  String messageTemp;
+  
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)message[i]);
+    messageTemp += (char)message[i];
+  }
+  Serial.println();
 
-void attachMeta(DynamicJsonDocument doc, int message_type) {
+  // Feel free to add more if statements to control more GPIOs with MQTT
+
+
+// TODO: CUSTOM PARSING
+  // If a message is received on the topic esp32/output, you check if the message is either "on" or "off". 
+  // Changes the output state according to the message
+  if (String(topic) == "/plant") {
+    Serial.print("...Parsing JSON...: ");
+    char buf[1000];
+    messageTemp.toCharArray(buf, 1000);
+    parseJson(buf);
+  }
+}
+
+
+void attachMeta(int message_type) {
   int battery = 55;  // TODO: MEASURE THIS
 
   doc[MESSAGE_KEY_DEVICE] = device_id;
@@ -162,7 +198,7 @@ DynamicJsonDocument parseJson(char msg[]) {
 
 void readImageAndSendMessage() {
   // json pre metadata
-  attachMeta(doc, 1);
+  attachMeta(1);
 
   for (uint8_t h = 0; h < 24; h++) {
     char row_index[20];

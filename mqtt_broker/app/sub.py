@@ -114,6 +114,7 @@ def subscribe(client: mqtt_client):
 def subscribe_regular(client: mqtt_client):
     def on_message(client, userdata, msg):
         raw_message = msg.payload.decode()
+        print("RECEIVED IT", raw_message)
         with open('json_data.json', 'w') as outfile:
             outfile.write(raw_message)
         output_image('json_data.json')

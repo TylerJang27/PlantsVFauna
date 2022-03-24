@@ -14,6 +14,8 @@ from app.models.device import Device
 from app.pub import send_announcement
 
 from sqlalchemy.exc import OperationalError
+import glob
+import os
 
 
 bp = Blueprint('index', __name__)
@@ -54,6 +56,24 @@ class ToggleForm(FlaskForm):
     submit = SubmitField(_l('Submit'))
 
 
+def get_img_path():
+    print("ATTEMPTING TO FIND IMG")
+    try:
+        print(glob.glob('*'))
+        list_of_files = glob.glob('app/static/assets/img/thermal/*')
+        latest_file = max(list_of_files, key=os.path.getctime)
+        print("LATEST FILE FOUND WAS", latest_file)
+        if latest_file is None or latest_file == []:
+            return ""
+        latest_file = os.path.join("assets/img/thermal", os.path.basename(latest_file))
+        print(latest_file)
+        return latest_file
+        # <img src="/static/ayrton_senna_movie_wallpaper_by_bashgfx-d4cm6x6.jpg">
+    except Exception as e:
+        print("error finding image", e)
+        return ""
+
+
 @bp.route('/detail/<int:device>', methods=['GET', 'POST'])
 @bp.route('/detail/<int:device>/<int:page>', methods=['GET', 'POST'])
 def detail(device, page=0):
@@ -79,4 +99,5 @@ def detail(device, page=0):
             is_on = form.turn_on
             send_announcement(device.device_id, is_on)
         # TODO: FIX NUMBERING COLUMN
-        return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page)
+        img_path = get_img_path()
+        return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page, img_path=img_path)

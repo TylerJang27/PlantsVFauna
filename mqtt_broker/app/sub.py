@@ -59,6 +59,15 @@ def triage_message(userdata, msg):
             status = "Pest detected" if type_enum == mt.pest else "Daily report"
             # TODO: FIX REPORT PRIMARY KEY
             report = Report(device_id, status, description, battery, time)
+            try:
+                # only for logging
+                with open('/data/images/json_data.json', 'w') as outfile:
+                    outfile.write(msg.payload.decode())
+                # writes image
+                output_image(device_id, '/data/images/json_data.json')
+
+            except Exception as e:
+                print("ERROR WRITING AND PARSING IMAGE", e)
             session.add(report)
         elif type_enum == mt.battery:
             # Battery update
@@ -114,14 +123,9 @@ def subscribe(client: mqtt_client):
 def subscribe_regular(client: mqtt_client):
     def on_message(client, userdata, msg):
         raw_message = msg.payload.decode()
-        print("RECEIVED IT", raw_message)
-        with open('json_data.json', 'w') as outfile:
-            outfile.write(raw_message)
-        output_image('json_data.json')
-
         print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
         triage_message(userdata, msg)
-        time.sleep(2)  # TODO: REMOVE TIME STOP
+        time.sleep(1)  # TODO: REMOVE TIME STOP
     client.subscribe(topic)
     client.on_message = on_message
 

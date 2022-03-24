@@ -52,6 +52,7 @@ services:
       - db.env
     volumes:
       - logs:/data/logs
+      - images:/app/app/static/assets/img/thermal
     networks:
       backnet:
         ipv4_address: 172.20.0.3

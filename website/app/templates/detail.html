@@ -89,6 +89,11 @@
                 {% endif %}
             </div>
         </div>
+        <div>
+            {% if img_path|length > 0 %}
+                <img width=400 height=300 src="{{  url_for('static', filename=img_path) }}"/>
+            {% endif %}
+        </div>
     </main>
 
 {% endblock %}

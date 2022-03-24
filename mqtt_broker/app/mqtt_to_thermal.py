@@ -8,7 +8,7 @@ import re
 import cv2
 import matplotlib.pyplot as plt
 import json
-
+from datetime import datetime as dt
 
 
 def create_test_communication():
@@ -53,7 +53,7 @@ def copy_file():
     shutil.copyfile(original, target)
     return target
 
-def make_image(raw_values, index):
+def make_image(device_id, raw_values, index):
     print("imagessss")
     # Enter the image height and width
     height = int(len(raw_values))
@@ -99,12 +99,13 @@ def make_image(raw_values, index):
             R, G, B = get_color(value)
             im[row,col] = (B,G,R)
     # Save to disk
-    string = "/data/images/image" + str(index) + ".png"
-
-    cv2.imwrite(string, im)
+    file_name = "/data/images/image" + str(index) + ".png"
+    file_name = "/data/images/{}image_{}.png".format(device_id, str(dt.now()).replace(" ", "_"))
+    print('WRITING STRING IMAGE TO', file_name)
+    print(im)
+    cv2.imwrite(file_name, im)
 
 def make_numpy_array(image_list):
-    print("fasdfa")
     image_array = np.array(image_list)
     np_image = np.reshape(image_array, (24, 32))
     print(np_image)
@@ -126,17 +127,18 @@ def parse_json(filename):
 
 
 # TODO: DON'T TOUCH THIS MAIN STUFF, BUT MAKE THE PARALLEL FUNCTION CODE RUN AUTOMATICALLY
-def output_image(file):
+def output_image(device_id, file):
     image_buffer = parse_json(file)
     # TODO: TEST THIS PARSING
     # for index in range(len(image_buffer)):
         # raw_values = make_numpy_array(image_buffer[index])
         # make_image(raw_values, index)
     raw_values = make_numpy_array(image_buffer)
-    make_image(raw_values, random.randint(0, 100))
+    print("MAKING IMAGE")
+    make_image(device_id, raw_values, random.randint(0, 100))
 
 if __name__ == "__main__":
     # copy_file()
     # read_file()
-    output_image("json_data.json")
+    output_image(0, "/data/images/json_data.json")
     

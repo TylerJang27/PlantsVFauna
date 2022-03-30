@@ -8,10 +8,11 @@
 #include <Wire.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include"pitches.h"
+#include "pitches.h"
 
 char* ssid = "DukeOpen";
 int device_id = 1;
+bool remote_on = false;
 const char* mqttServer = "plantsvfauna.colab.duke.edu";
 const int mqttPort = 1883;
 const char* mqttUser = "test";
@@ -56,6 +57,7 @@ char test_buffer[16384];
 Adafruit_MLX90640 mlx;
 float frame[32 * 24]; // buffer for full frame of temperatures
 //int buffer_thermal[768];
+char buf[1000];
 
 //low range of the sensor (this will be blue on the screen)
 int MINTEMP = 20;
@@ -64,6 +66,17 @@ int MINTEMP = 20;
 int MAXTEMP = 35;
 
 uint16_t displayPixelWidth, displayPixelHeight;
+
+void startup_message() {
+  const char* willPayload = "{\"type\": \"startup\", \"device_id\": 1, \"description\": \"launchinge\", \"battery\": 80}";
+  client.beginPublish("/plant", strlen(willPayload), false);
+  for (int i = 0; i < strlen(willPayload); i ++) {
+    client.write((uint8_t)willPayload[i]);
+  }
+//  client.write(willPayload, strlen(willPayload));
+  Serial.println("END_PUB for startup");
+  client.endPublish();
+}
 
 void setup() {
   Serial.begin(9600);
@@ -79,23 +92,23 @@ void setup() {
   }
 
   Serial.println("Connected to WiFi.");
-  client.setKeepAlive(65000);
+  client.setKeepAlive(10);
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
+  const char* willPayload = "{\"type\": \"shutdown\", \"device_id\": 1, \"description\": \"will message\", \"battery\": 10}";
+  bool willRetain = true;
+  int willQos = 1;
 
-  // String willPayload = "err";
-  // bool willRetain = true;
-  // int willQos = 1;
-
-  // mqttClient.beginWill("/plant", willPayload.length(), willRetain, willQos);
-  // mqttClient.print(willPayload);
-  // mqttClient.endWill();
+//  client.beginWill("/plant", willPayload.length(), willRetain, willQos);
+//  client.print(willPayload);
+//  client.endWill();
 
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (client.connect("ESP32Client", mqttUser, mqttPassword )) {
+    if (client.connect("ESP32Client", mqttUser, mqttPassword, "/plant", willQos, willRetain, willPayload )) {
       Serial.println("MQTT connected");
       client.subscribe("/plant", 1);
+      startup_message();  // TODO: ADD STARTUP MESSAGE
     } else {
       Serial.print("failed with state ");
       Serial.print(client.state());
@@ -141,9 +154,9 @@ void callback(char* topic, byte* message, unsigned int length) {
   // Changes the output state according to the message
   if (String(topic) == "/plant") {
     Serial.print("...Parsing JSON...: ");
-    char buf[1000];
     messageTemp.toCharArray(buf, 1000);
-    parseJson(buf);
+    Serial.println("written to byte array");
+    parseJson();
   }
 }
 
@@ -168,28 +181,30 @@ void attachMeta(int message_type) {
   doc[MESSAGE_KEY_TIME] = "";  // TODO: CHANGE TO PARSE TIME
 }
 
-DynamicJsonDocument parseJson(char msg[]) {
-  DynamicJsonDocument doc(1024);
-  doc.clear();
-  deserializeJson(doc, msg);
+void parseJson() {
+  DynamicJsonDocument tempdoc(1024);
+  tempdoc.clear();
+  deserializeJson(tempdoc, buf);
 
-  const char* message_type = doc[MESSAGE_KEY_TYPE];
-  int in_device_id = doc[MESSAGE_KEY_DEVICE];
+  const char* message_type = tempdoc[MESSAGE_KEY_TYPE];
+  int in_device_id = tempdoc[MESSAGE_KEY_DEVICE];
 
   String in_message_type, compare_message_type1, compare_message_type2;
   in_message_type = String(message_type);
+  Serial.println(in_message_type);
   compare_message_type1 = String(MESSAGE_TYPE_POWER_ON);
   compare_message_type2 = String(MESSAGE_TYPE_POWER_OFF);
 
   if (in_device_id == device_id) {
     if (in_message_type == compare_message_type1) {
       Serial.println("TURN ON REMOTE");
-      // TODO: IMPLEMENT/TOGGLE BOOLEAN
+      remote_on = true;
     } else if (in_message_type == compare_message_type2) {
       Serial.println("TURN OFF REMOTE");
-      // TODO: IMPLEMENT/TOGGLE BOOLEAN
+      remote_on = false;
     }
   }
+  // TODO: MEMORY LEAK HAPPENING SOMEWHERE HERE
 }
 
 void deter() {
@@ -263,7 +278,7 @@ void readImageAndSendMessage() {
 }
 
 void loop() {
-  if (counter == 0 || true) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS
+  if (counter == 0 || true) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS remote_on
     if (digitalRead(33) == HIGH) {
       uint32_t timestamp = millis();
       if (mlx.getFrame(frame) != 0) {
@@ -279,7 +294,7 @@ void loop() {
 
       //
       delay(100);
-      client.loop();
+      client.loop();  // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
     }
   }
 }

@@ -76,10 +76,12 @@ def triage_message(userdata, msg):
         elif type_enum == mt.startup.name:
             # Manual On
             device.manual_on = True
+            print("DEVICE ALIVE")
 
         elif type_enum == mt.shutdown.name:
             # Manual Off
             device.manual_on = False
+            print("DEVICE DIED")
         
         else:
             # Undefined behavior

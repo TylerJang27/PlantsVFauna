@@ -32,8 +32,32 @@ password = 'test2'
 config = Config()
 db = DB()
 
+DEVICE_KEY = "device_id"
+TYPE_KEY = "type"
+BATTERY_KEY = "battery"
+DESCRIPTION_KEY = "description"
+TIMESTAMP_KEY = "time"
 
-def triage_message(userdata, msg):
+
+def send_remote_status(client, device_id):
+    with db.make_session() as session:
+        device = session.query(Device).filter(Device.device_id == device_id).one_or_none()
+        message_type = mt.power_on.name if device.remote_on else mt.power_off.name
+        description = "refresh remote on" if device.remote_on else "refresh remote off"
+        out = {DEVICE_KEY: device_id, TYPE_KEY: message_type,
+               BATTERY_KEY: 0, DESCRIPTION_KEY: description,
+               TIMESTAMP_KEY: str(dt.now())}
+        json_obj = json.dumps(out)
+
+        result = client.publish(topic, json_obj)
+        status = result[0]
+        if status == 0:
+            print(f"Send `{json_obj}` to topic `{topic}`")
+        else:
+            print(f"Failed to send message to topic {topic}")
+
+
+def triage_message(userdata, msg, client):
     try:
         print("msg is ", msg.payload.decode())
         obj_in = json.loads(msg.payload.decode())
@@ -60,11 +84,13 @@ def triage_message(userdata, msg):
             # TODO: FIX REPORT PRIMARY KEY
             report = Report(device_id, status, description, battery, time)
             try:
+                # writes image
+                output_image(device_id, msg.payload.decode())
+
                 # only for logging
                 with open('/data/images/json_data.json', 'w') as outfile:
                     outfile.write(msg.payload.decode())
-                # writes image
-                output_image(device_id, '/data/images/json_data.json')
+                
 
             except Exception as e:
                 print("ERROR WRITING AND PARSING IMAGE", e)
@@ -76,6 +102,7 @@ def triage_message(userdata, msg):
         elif type_enum == mt.startup.name:
             # Manual On
             device.manual_on = True
+            send_remote_status(client, device_id)
             print("DEVICE ALIVE")
 
         elif type_enum == mt.shutdown.name:
@@ -116,7 +143,7 @@ def connect_mqtt() -> mqtt_client:
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
-        triage_message(userdata, msg)
+        triage_message(userdata, msg, client)
 
     client.on_message = on_message
     client.subscribe(topic)
@@ -126,7 +153,7 @@ def subscribe_regular(client: mqtt_client):
     def on_message(client, userdata, msg):
         raw_message = msg.payload.decode()
         print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
-        triage_message(userdata, msg)
+        triage_message(userdata, msg, client)
         time.sleep(1)  # TODO: REMOVE TIME STOP
     client.subscribe(topic)
     client.on_message = on_message

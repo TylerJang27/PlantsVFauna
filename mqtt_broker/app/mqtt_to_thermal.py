@@ -125,10 +125,17 @@ def parse_json(filename):
     return out
 
 
+def parse_dict(msg):
+    out = []
+    for row in msg:
+        if row.startswith("camValue"):
+            out += data[row]
+    return out
+
 
 # TODO: DON'T TOUCH THIS MAIN STUFF, BUT MAKE THE PARALLEL FUNCTION CODE RUN AUTOMATICALLY
-def output_image(device_id, file):
-    image_buffer = parse_json(file)
+def output_image(device_id, decoded_msg):
+    image_buffer = parse_dict(decoded_msg)
     # TODO: TEST THIS PARSING
     # for index in range(len(image_buffer)):
         # raw_values = make_numpy_array(image_buffer[index])

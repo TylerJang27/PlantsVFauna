@@ -68,10 +68,10 @@ int MAXTEMP = 35;
 uint16_t displayPixelWidth, displayPixelHeight;
 
 void startup_message() {
-  const char* willPayload = "{\"type\": \"startup\", \"device_id\": 1, \"description\": \"launchinge\", \"battery\": 80}";
-  client.beginPublish("/plant", strlen(willPayload), false);
-  for (int i = 0; i < strlen(willPayload); i ++) {
-    client.write((uint8_t)willPayload[i]);
+  const char* startupPayload = "{\"type\": \"startup\", \"device_id\": 1, \"description\": \"launching\", \"battery\": 80}";
+  client.beginPublish("/plant", strlen(startupPayload), false);
+  for (int i = 0; i < strlen(startupPayload); i ++) {
+    client.write((uint8_t)startupPayload[i]);
   }
 //  client.write(willPayload, strlen(willPayload));
   Serial.println("END_PUB for startup");
@@ -204,7 +204,6 @@ void parseJson() {
       remote_on = false;
     }
   }
-  // TODO: MEMORY LEAK HAPPENING SOMEWHERE HERE
 }
 
 void deter() {
@@ -278,7 +277,8 @@ void readImageAndSendMessage() {
 }
 
 void loop() {
-  if (counter == 0 || true) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS remote_on
+  client.loop();
+  if (remote_on) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS remote_on
     if (digitalRead(33) == HIGH) {
       uint32_t timestamp = millis();
       if (mlx.getFrame(frame) != 0) {
@@ -291,10 +291,12 @@ void loop() {
       counter++;
       Serial.print((millis() - timestamp) / 2); Serial.println(" ms per frame (2 frames per display)");
       Serial.print(2000.0 / (millis() - timestamp)); Serial.println(" FPS (2 frames per display)");
-
       //
       delay(100);
-      client.loop();  // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
+      // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
     }
+  } else {
+    Serial.println("Remote off, skipping");
+    delay(100);
   }
 }

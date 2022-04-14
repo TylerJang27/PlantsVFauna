@@ -28,8 +28,11 @@
                     <div class="col-1" style="text-align: center;">
                         <p>#</p>
                     </div>
-                    <div class="col-3">
+                    <div class="col-1">
                         <p class="mb-1">Device</p>
+                    </div>
+                    <div class="col-2">
+                        <p class="mb-1">Time</p>
                     </div>
                     <div class="col-3"> 
                         <p class="mb-1">Status</p>
@@ -44,10 +47,13 @@
                 {% for report in reports %}
                 <div class="row align-items-center">
                     <div class="col-1" style="text-align: center;">
-                        <p>{{loop.index}}</p>
+                        <p>{{loop.index + page*10}}</p>
                     </div>
-                    <div class="col-3">
+                    <div class="col-1">
                         <p class="mb-1">{{report.device_id}}</p>
+                    </div>
+                    <div class="col-2">
+                        <p class="mb-1">{{report.time}}</p>
                     </div>
                     <div class="col-3"> 
                         <p class="mb-1">{{report.status}}</p>
@@ -63,15 +69,20 @@
 
                 {% if has_prev %}
                 <li>
-                    <a href="{{ url_for('index.status', page=page-1) }}">Previous</a>
+                    <a href="{{ url_for('index.summary', page=page-1) }}">Previous</a>
                 </li>
                 {% endif %}
 
                 {% if has_next %}
                 <li>
-                    <a href="{{ url_for('index.status', page=page+1) }}">Next</a></li>
+                    <a href="{{ url_for('index.summary', page=page+1) }}">Next</a></li>
                 {% endif %}
             </div>
+        </div>
+        <div>
+            {% if graph_loc != "" %}
+                <img width=400 height=300 src="{{  url_for('static', filename=graph_loc) }}"/>
+            {% endif %}
         </div>
     </main>
 

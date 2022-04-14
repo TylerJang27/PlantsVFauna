@@ -12,8 +12,11 @@ from app.models.report import Report
 from app.models.device import Device
 
 from app.pub import send_announcement
+from app.utils import create_graph
 
+from datetime import datetime as dt, timedelta as td
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import nullslast
 import glob
 import os
 
@@ -39,16 +42,28 @@ def index():
 def summary(page=0):
     if not current_user.is_authenticated:
         return redirect("/login", code=302)
+    graph_filename = ""
+    reports = []
+    devices = []
     with app.db.make_session() as session:
         try:
-            reports = session.query(Report).order_by(Report.time.desc()).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
-            has_next = session.query(Report).order_by(Report.time.desc()).count() > (page+1)*PAGE_SIZE
+            # TODO: FIGURE OUT NEXT BUTTON
+            reports = session.query(Report).order_by(nullslast(Report.time.desc())).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
+            has_next = session.query(Report).order_by(nullslast(Report.time.desc())).count() > (page+1)*PAGE_SIZE
             has_prev = page > 0
+            devices = [d.device_id for d in session.query(Device).all()]
+
+            reports_limited = session.query(Report).filter(Report.time > (dt.now() - td(hours=24))).all()
+            print(len(reports_limited))
+            if len(reports_limited) > 0:
+                graph_filename = "last_24.png"
+                graph_write_path = os.path.join("app/static/assets/img", graph_filename)
+                graph_loc = os.path.join("assets/img", graph_filename)
+                create_graph([r.time for r in reports_limited], graph_write_path)
+
         except OperationalError:
-            flash("No users in the database.")
-        users_list = None
-        devices = [d.device_id for d in session.query(Device).all()]
-        return render_template('summary.html', reports=reports, devices=devices)
+            flash("SQL Error.")
+        return render_template('summary.html', reports=reports, devices=devices, graph_loc=graph_loc, has_next=has_next, has_prev=has_prev, page=page)
 
 
 class ToggleForm(FlaskForm):
@@ -60,7 +75,7 @@ def get_img_path():
     print("ATTEMPTING TO FIND IMG")
     try:
         print(glob.glob('*'))
-        list_of_files = glob.glob('app/static/assets/img/thermal/*')
+        list_of_files = glob.glob('app/static/assets/img/thermal/*.png')
         latest_file = max(list_of_files, key=os.path.getctime)
         print("LATEST FILE FOUND WAS", latest_file)
         if latest_file is None or latest_file == []:
@@ -81,7 +96,7 @@ def detail(device, page=0):
         return redirect("/login", code=302)
     with app.db.make_session() as session:
         try:
-            reports = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
+            reports = session.query(Report).filter(Report.device_id == device).order_by(nullslast(Report.time.desc())).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
             has_next = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).count() > (page+1)*PAGE_SIZE
             has_prev = page > 0
         except OperationalError:
@@ -91,6 +106,7 @@ def detail(device, page=0):
 
         form = ToggleForm()
         device = session.query(Device).filter(Device.device_id == device).one_or_none()
+        print("DEVICE ON:", device.remote_on)
         if device is None:
             return redirect("/summary", code=302)
         form.turn_on = not device.remote_on
@@ -98,6 +114,9 @@ def detail(device, page=0):
             print("PRE-SEND")
             is_on = form.turn_on
             send_announcement(device.device_id, is_on)
+            device.remote_on = is_on
+            session.add(device)
+            session.commit()
         # TODO: FIX NUMBERING COLUMN
         img_path = get_img_path()
         return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page, img_path=img_path)

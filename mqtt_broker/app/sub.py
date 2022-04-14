@@ -68,8 +68,8 @@ def triage_message(userdata, msg, client):
         try:
             time = dt.fromisoformat(obj_in['time'])
         except Exception as e:
-            print("COULDN'T PARSE TIME", e)
             time = dt.now()
+            print("COULDN'T PARSE TIME", e, "USING", time)
     
     except Exception as e:
         print("Error occurred on message triage:")
@@ -82,10 +82,11 @@ def triage_message(userdata, msg, client):
             # Pest detected or Daily report
             status = "Pest detected" if type_enum == mt.pest else "Daily report"
             # TODO: FIX REPORT PRIMARY KEY
+            print("TIME LISTED AS ", time)
             report = Report(device_id, status, description, battery, time)
             try:
                 # writes image
-                output_image(device_id, msg.payload.decode())
+                output_image(device_id, obj_in)
 
                 # only for logging
                 with open('/data/images/json_data.json', 'w') as outfile:
@@ -99,13 +100,13 @@ def triage_message(userdata, msg, client):
             # Battery update
             pass
 
-        elif type_enum == mt.startup.name:
+        elif type_enum == mt.startup:
             # Manual On
             device.manual_on = True
             send_remote_status(client, device_id)
             print("DEVICE ALIVE")
 
-        elif type_enum == mt.shutdown.name:
+        elif type_enum == mt.shutdown:
             # Manual Off
             device.manual_on = False
             print("DEVICE DIED")
@@ -113,10 +114,12 @@ def triage_message(userdata, msg, client):
         else:
             # Undefined behavior
             print("UNDEFINED BEHAVIOR. TRIAGE FAILED")
+            print(type_enum, msg.payload.decode())
             return
         device.battery = battery
         session.add(device)
         session.commit()
+        print("COMMITTED. Remote is currently:", device.remote_on)
 
 
 heatmap_count = 0

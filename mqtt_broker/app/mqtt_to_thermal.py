@@ -108,7 +108,7 @@ def make_image(device_id, raw_values, index):
 def make_numpy_array(image_list):
     image_array = np.array(image_list)
     np_image = np.reshape(image_array, (24, 32))
-    print(np_image)
+    print("NUMPY IMAGE:", np_image)
     return np_image
 
 def parse_json(filename):
@@ -126,10 +126,12 @@ def parse_json(filename):
 
 
 def parse_dict(msg):
+    print("My msg:", msg, type(msg))
     out = []
     for row in msg:
-        if row.startswith("camValue"):
-            out += data[row]
+        if "camValue" in row:
+            out.append(msg[row])
+    print("My out!", out)
     return out
 
 

@@ -33,6 +33,9 @@ const char* MESSAGE_KEY_DESCRIPTION = "description";
 const char* MESSAGE_KEY_BATTERY = "battery";
 const char* MESSAGE_KEY_TIME = "time";
 
+unsigned long previousTime = 0;
+
+
 int melody[] = {
   NOTE_D5, NOTE_DS5, NOTE_E5, NOTE_F5,
   NOTE_FS5, NOTE_G5, NOTE_GS5, NOTE_A5,
@@ -60,7 +63,7 @@ float frame[32 * 24]; // buffer for full frame of temperatures
 char buf[1000];
 
 //low range of the sensor (this will be blue on the screen)
-int MINTEMP = 20;
+int MINTEMP = 19;
 
 //high range of the sensor (this will be red on the screen)
 int MAXTEMP = 35;
@@ -80,7 +83,10 @@ void startup_message() {
 
 void setup() {
   Serial.begin(9600);
-  pinMode(33, INPUT);
+  pinMode(33, INPUT); // 12, 21, 14
+  pinMode(12, INPUT);
+  pinMode(21, INPUT);
+  pinMode(27, INPUT);
   pinMode(lightON, OUTPUT);
   ledcSetup(0, 1E5, 12);
   ledcAttachPin(15, 0);
@@ -92,7 +98,7 @@ void setup() {
   }
 
   Serial.println("Connected to WiFi.");
-  client.setKeepAlive(10);
+  client.setKeepAlive(60);
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
   const char* willPayload = "{\"type\": \"shutdown\", \"device_id\": 1, \"description\": \"will message\", \"battery\": 10}";
@@ -259,7 +265,7 @@ void readImageAndSendMessage() {
     }
   }
 
-  if (count > 50) { //6.5% of entire image is "warm"
+  if (count > 40) { //6.5% of entire image is "warm"
     Serial.println("PEST DETECTED");
     size_t n = serializeJson(doc, test_buffer);
     client.beginPublish("/plant", n, false);
@@ -276,10 +282,20 @@ void readImageAndSendMessage() {
   // TODO: CLEANUP doc AND REMOVE IMAGE AND FIELDS
 }
 
+void send_blink() {
+  const char* startupPayload = "{\"type\": \"ping\", \"device_id\": 1, \"description\": \"just pinging\", \"battery\": 79}";
+  client.beginPublish("/plant", strlen(startupPayload), false);
+  for (int i = 0; i < strlen(startupPayload); i ++) {
+    client.write((uint8_t)startupPayload[i]);
+  }
+  Serial.println("END_PUB for startup");
+  client.endPublish();
+}
+
 void loop() {
-  client.loop();
+  client.loop(); // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
   if (remote_on) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS remote_on
-    if (digitalRead(33) == HIGH) {
+    if (digitalRead(33) == HIGH || digitalRead(12) == HIGH || digitalRead(21) == HIGH || digitalRead(27) == HIGH) {
       uint32_t timestamp = millis();
       if (mlx.getFrame(frame) != 0) {
         Serial.println("Failed");
@@ -293,10 +309,13 @@ void loop() {
       Serial.print(2000.0 / (millis() - timestamp)); Serial.println(" FPS (2 frames per display)");
       //
       delay(100);
-      // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
     }
   } else {
     Serial.println("Remote off, skipping");
     delay(100);
+  }
+  if((millis() - previousTime) > 30 * 1000) {
+    previousTime = millis();   
+    send_blink();
   }
 }

@@ -11,6 +11,8 @@
 #include "pitches.h"
 
 char* ssid = "DukeOpen";
+//char* ssid = "TJ_DUMMY_1";
+//char* passphrase = "00000000";
 int device_id = 1;
 bool remote_on = false;
 const char* mqttServer = "plantsvfauna.colab.duke.edu";
@@ -18,6 +20,8 @@ const int mqttPort = 1883;
 const char* mqttUser = "test";
 const char* mqttPassword = "test";
 int counter = 0;
+const int DEBUG_LEVEL = 1;
+const bool SOUND_ENABLED = true;
 
 const char* MESSAGE_TYPE_PEST = "pest";
 const char* MESSAGE_TYPE_REPORT = "report";
@@ -34,6 +38,10 @@ const char* MESSAGE_KEY_BATTERY = "battery";
 const char* MESSAGE_KEY_TIME = "time";
 
 unsigned long previousTime = 0;
+
+const char* willPayload = "{\"type\": \"shutdown\", \"device_id\": 1, \"description\": \"will message\", \"battery\": 10}";
+bool willRetain = true;
+int willQos = 1;
 
 
 int melody[] = {
@@ -90,6 +98,7 @@ void setup() {
   pinMode(lightON, OUTPUT);
   ledcSetup(0, 1E5, 12);
   ledcAttachPin(15, 0);
+//  WiFi.begin(ssid, passphrase);
   WiFi.begin(ssid);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -101,20 +110,13 @@ void setup() {
   client.setKeepAlive(60);
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
-  const char* willPayload = "{\"type\": \"shutdown\", \"device_id\": 1, \"description\": \"will message\", \"battery\": 10}";
-  bool willRetain = true;
-  int willQos = 1;
-
-//  client.beginWill("/plant", willPayload.length(), willRetain, willQos);
-//  client.print(willPayload);
-//  client.endWill();
 
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
     if (client.connect("ESP32Client", mqttUser, mqttPassword, "/plant", willQos, willRetain, willPayload )) {
       Serial.println("MQTT connected");
       client.subscribe("/plant", 1);
-      startup_message();  // TODO: ADD STARTUP MESSAGE
+      startup_message();
     } else {
       Serial.print("failed with state ");
       Serial.print(client.state());
@@ -143,21 +145,21 @@ void setup() {
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("Message arrived on topic: ");
   Serial.print(topic);
-  Serial.print(". Message: ");
+  if (DEBUG_LEVEL >= 1) {
+    Serial.print(". Message: ");
+  }
   String messageTemp;
 
   for (int i = 0; i < length; i++) {
-    Serial.print((char)message[i]);
+    if (DEBUG_LEVEL >= 1) {
+      Serial.print((char)message[i]);
+    }
     messageTemp += (char)message[i];
   }
   Serial.println();
 
   // Feel free to add more if statements to control more GPIOs with MQTT
 
-
-  // TODO: CUSTOM PARSING
-  // If a message is received on the topic esp32/output, you check if the message is either "on" or "off".
-  // Changes the output state according to the message
   if (String(topic) == "/plant") {
     Serial.print("...Parsing JSON...: ");
     messageTemp.toCharArray(buf, 1000);
@@ -216,8 +218,12 @@ void deter() {
   int melodyLength = sizeof(melody) / sizeof(int);
   for (int count = 0; count < 10; count++) {
     for (int thisNote = 0; thisNote < melodyLength; thisNote++) {
-      Serial.println(thisNote);
-      tone(15, melody[thisNote]);
+      if (DEBUG_LEVEL >= 2) {
+        Serial.println(thisNote);
+      }
+      if (SOUND_ENABLED) {
+        tone(15, melody[thisNote]);
+      }
       if (blink == 0) {
         state = !state;
         digitalWrite(lightON, state);
@@ -279,7 +285,6 @@ void readImageAndSendMessage() {
   else {
     Serial.println("NO PEST");
   }
-  // TODO: CLEANUP doc AND REMOVE IMAGE AND FIELDS
 }
 
 void send_blink() {
@@ -293,12 +298,42 @@ void send_blink() {
 }
 
 void loop() {
-  client.loop(); // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
+  // reconnect behavior
+  int status = WiFi.status();
+  Serial.print("Wifi status: "); Serial.println(status); // 3 is good
+  if (status != WL_CONNECTED) {
+    Serial.print("Attempting to reconnect to WiFi network");
+    status = WiFi.begin(ssid);
+//    status = WiFi.begin(ssid, passphrase);
+    if (status != WL_CONNECTED) {
+      Serial.println("Connection failed, continuing loop");
+    }
+  }
+
+  if (!client.connected()) {
+    Serial.println("Connecting to MQTT...");
+    if (client.connect("ESP32Client", mqttUser, mqttPassword, "/plant", willQos, willRetain, willPayload )) {
+      Serial.println("MQTT connected");
+      client.subscribe("/plant", 1);
+      startup_message();
+    } else {
+      Serial.print("failed with state ");
+      Serial.print(client.state());
+      delay(2000);
+    }
+  } else {
+    Serial.println("Still connected to MQTT...");
+    client.loop();
+  }
+
+  // main loop!!!
+//  client.loop(); // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
   if (remote_on) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS remote_on
     if (digitalRead(33) == HIGH || digitalRead(12) == HIGH || digitalRead(21) == HIGH || digitalRead(27) == HIGH) {
       uint32_t timestamp = millis();
       if (mlx.getFrame(frame) != 0) {
-        Serial.println("Failed");
+        Serial.println("Failed thermal");
+        delay(1000);
         return;
       }
       //    int colorTemp;
@@ -312,7 +347,7 @@ void loop() {
     }
   } else {
     Serial.println("Remote off, skipping");
-    delay(100);
+    delay(1000);
   }
   if((millis() - previousTime) > 30 * 1000) {
     previousTime = millis();   

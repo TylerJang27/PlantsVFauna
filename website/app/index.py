@@ -45,6 +45,7 @@ def summary(page=0):
     graph_filename = ""
     reports = []
     devices = []
+    graph_loc = ""
     with app.db.make_session() as session:
         try:
             # TODO: FIGURE OUT NEXT BUTTON
@@ -77,6 +78,13 @@ def get_img_path():
         print(glob.glob('*'))
         list_of_files = glob.glob('app/static/assets/img/thermal/*.png')
         latest_file = max(list_of_files, key=os.path.getctime)
+        for f in list_of_files:
+            if f != latest_file and not os.path.basename(f).endswith(".json"):
+                if os.path.exists(f):
+                    os.remove(f)
+                    print("Cleaned up", f)
+                else:
+                    print("File does not exist", f)
         print("LATEST FILE FOUND WAS", latest_file)
         if latest_file is None or latest_file == []:
             return ""

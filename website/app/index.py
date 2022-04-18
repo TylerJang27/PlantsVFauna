@@ -11,7 +11,7 @@ from flask import Blueprint
 from app.models.report import Report
 from app.models.device import Device
 
-from app.pub import send_announcement
+from app.pub import send_announcement, ParalelAnnouncement
 from app.utils import create_graph
 
 from datetime import datetime as dt, timedelta as td
@@ -19,6 +19,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy import nullslast
 import glob
 import os
+import asyncio
 
 
 bp = Blueprint('index', __name__)
@@ -100,6 +101,7 @@ def get_img_path():
 @bp.route('/detail/<int:device>', methods=['GET', 'POST'])
 @bp.route('/detail/<int:device>/<int:page>', methods=['GET', 'POST'])
 def detail(device, page=0):
+    device_id = device
     if not current_user.is_authenticated:
         return redirect("/login", code=302)
     with app.db.make_session() as session:
@@ -114,6 +116,7 @@ def detail(device, page=0):
 
         form = ToggleForm()
         device = session.query(Device).filter(Device.device_id == device).one_or_none()
+        # device.manual_on = True  # TODO: REMOVE THIS LINE
         print("DEVICE ON:", device.remote_on)
         if device is None:
             return redirect("/summary", code=302)
@@ -121,10 +124,16 @@ def detail(device, page=0):
         if form.validate_on_submit():
             print("PRE-SEND")
             is_on = form.turn_on
-            send_announcement(device.device_id, is_on)
+            # TODO: MAKE ASYNC NEXT LINE
+            # asyncio.create_task(send_announcement(device.device_id, is_on))
+            # send_announcement(device.device_id, is_on)
+            parallel = ParalelAnnouncement(device.device_id, is_on)
+            parallel.start()
+
             device.remote_on = is_on
             session.add(device)
             session.commit()
+            return redirect('/detail/{}/{}'.format(device_id, page))
         # TODO: FIX NUMBERING COLUMN
         img_path = get_img_path()
         return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page, img_path=img_path)

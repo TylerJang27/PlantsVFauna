@@ -3,6 +3,8 @@
 import json
 import random
 import time
+import asyncio
+from threading import Thread
 
 from paho.mqtt import client as mqtt_client
 from datetime import datetime as dt
@@ -76,6 +78,17 @@ def send_announcement(device_id, turn_on):
         print(e)
         print("UNKNOWN ERROR WITH SENDING MESSAGE")
 
+class ParalelAnnouncement(Thread):
+    device_id: int
+    is_on: bool
+    
+    def __init__(self, device_id, is_on):
+        super().__init__()
+        self.device_id = device_id
+        self.is_on = is_on
+
+    def run(self, *args, **kwargs):
+        send_announcement(self.device_id, self.is_on)
 
 if __name__ == '__main__':
     run()

@@ -103,8 +103,9 @@ def triage_message(userdata, msg, client):
         elif type_enum == mt.startup:
             # Manual On
             device.manual_on = True
-            send_remote_status(client, device_id)
             print("DEVICE ALIVE")
+            if description != "pinging":
+                send_remote_status(client, device_id)
 
         elif type_enum == mt.shutdown:
             # Manual Off

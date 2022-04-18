@@ -39,7 +39,7 @@ def connect_mqtt():
 
 def publish(client, device_id, msg):
     # TODO: USE DEVICE_ID
-    result = client.publish(topic, msg)
+    result = client.publish(topic, msg, qos=2)
     # result: [0, 1]
     status = result[0]
     if status == 0:

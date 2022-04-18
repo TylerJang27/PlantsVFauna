@@ -49,7 +49,7 @@ def send_remote_status(client, device_id):
                TIMESTAMP_KEY: str(dt.now())}
         json_obj = json.dumps(out)
 
-        result = client.publish(topic, json_obj)
+        result = client.publish(topic, json_obj, qos=2)
         status = result[0]
         if status == 0:
             print(f"Send `{json_obj}` to topic `{topic}`")
@@ -149,7 +149,7 @@ def subscribe(client: mqtt_client):
         triage_message(userdata, msg, client)
 
     client.on_message = on_message
-    client.subscribe(topic)
+    client.subscribe(topic, qos=2)
 
 
 def subscribe_regular(client: mqtt_client):
@@ -158,7 +158,7 @@ def subscribe_regular(client: mqtt_client):
         print(f"Received msg {msg.payload.decode()} from {msg.topic} topic with {userdata}")
         triage_message(userdata, msg, client)
         time.sleep(1)  # TODO: REMOVE TIME STOP
-    client.subscribe(topic)
+    client.subscribe(topic, qos=2)
     client.on_message = on_message
 
 
@@ -176,7 +176,7 @@ def subscribe_thermal(client: mqtt_client):
                 raw_values = make_numpy_array(image_buffer[index])
                 make_image(raw_values, index)
 
-    client.subscribe(topic)
+    client.subscribe(topic, qos=2)
     client.on_message = on_message
         
 
@@ -186,7 +186,7 @@ def subscribe_image(client: mqtt_client):
         f.write(msg.payload)
         print("Image Received")
         f.close()
-    client.subscribe(topic)
+    client.subscribe(topic, qos=2)
     client.on_message = on_message
 
 def main():

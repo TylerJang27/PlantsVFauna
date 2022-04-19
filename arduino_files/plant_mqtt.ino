@@ -48,7 +48,7 @@ unsigned long previousTime = 0;
 int maxTempThresh = 35;
 int minTempThresh = 19;
 int colorIndexThresh = 90;
-int countThresh = 15;
+int countThresh = 50;
 
 const char* willPayload = "{\"type\": \"shutdown\", \"device_id\": 1, \"description\": \"will message\", \"battery\": 10}";
 bool willRetain = true;
@@ -79,7 +79,7 @@ char test_buffer[16384];
 Adafruit_MLX90640 mlx;
 float frame[32 * 24]; // buffer for full frame of temperatures
 //int buffer_thermal[768];
-char buf[1000];
+char buf[2000];
 
 //low range of the sensor (this will be blue on the screen)
 //int MINTEMP = minTempThresh;
@@ -120,13 +120,13 @@ void setup() {
   Serial.println("Connected to WiFi.");
   client.setKeepAlive(60);
   client.setServer(mqttServer, mqttPort);
+  client.setCallback(callback);
 
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
     if (client.connect("ESP32Client", mqttUser, mqttPassword, "/plant", willQos, willRetain, willPayload )) {
       Serial.println("MQTT connected");
       client.subscribe("/plant", 1);
-      client.setCallback(callback);
       startup_message();
     } else {
       Serial.print("failed with state ");
@@ -334,7 +334,8 @@ void loop() {
   // reconnect behavior
   int status = WiFi.status();
   if (DEBUG_LEVEL >= 2) {
-    Serial.print("Wifi status: "); Serial.println(status); // 3 is good
+    Serial.print("Wifi status: ");
+    Serial.println(status); // 3 is good
   }
   if (status != WL_CONNECTED) {
     Serial.print("Attempting to reconnect to WiFi network");
@@ -348,11 +349,11 @@ void loop() {
   if (!client.connected()) {
     client.setKeepAlive(60);
     client.setServer(mqttServer, mqttPort);
+    client.setCallback(callback);
     Serial.println("Connecting to MQTT...");
     if (client.connect("ESP32Client", mqttUser, mqttPassword, "/plant", willQos, willRetain, willPayload )) {
       Serial.println("MQTT connected");
       client.subscribe("/plant", 1);
-      client.setCallback(callback);
       startup_message();
     } else {
       Serial.print("failed with state ");
@@ -362,8 +363,8 @@ void loop() {
   } else {
     if (DEBUG_LEVEL >= 2) {
       Serial.println("Still connected to MQTT...");
-      client.loop();
     }
+    client.loop();
   }
 
   // main loop!!!

@@ -82,7 +82,7 @@ def get_img_path():
         for f in list_of_files:
             if f != latest_file and not os.path.basename(f).endswith(".json"):
                 if os.path.exists(f):
-                    os.remove(f)
+                    # os.remove(f)
                     print("Cleaned up", f)
                 else:
                     print("File does not exist", f)

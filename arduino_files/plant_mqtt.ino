@@ -71,7 +71,7 @@ float frame[32 * 24]; // buffer for full frame of temperatures
 char buf[1000];
 
 //low range of the sensor (this will be blue on the screen)
-int MINTEMP = 19;
+int MINTEMP = 10;
 
 //high range of the sensor (this will be red on the screen)
 int MAXTEMP = 35;
@@ -140,6 +140,10 @@ void setup() {
   mlx.setRefreshRate(MLX90640_8_HZ);
   Wire.setClock(1000000); // max 1 MHz
 
+  //play tone
+  tone(15, melody[4]);
+  delay(1000);
+  tone(15, END);
 }
 
 void callback(char* topic, byte* message, unsigned int length) {
@@ -244,6 +248,7 @@ void readImageAndSendMessage() {
   doc.clear();
   attachMeta(1);
   int count = 0;
+  int sqCount = 0;
   for (uint8_t h = 0; h < 24; h++) {
     char row_index[20];
     sprintf(row_index, "camValue%u", h);
@@ -258,12 +263,14 @@ void readImageAndSendMessage() {
         t = MINTEMP;
       }
 
-
+      if (t > 15) {
+        sqCount = sqCount + 1;
+      }
       uint8_t colorIndex = map(t, MINTEMP, MAXTEMP, 0, 255);
 
       colorIndex = constrain(colorIndex, 0, 255);
 
-      if (colorIndex > 100) {
+      if (colorIndex > 30) {
         count = count + 1;
       }
 
@@ -271,7 +278,10 @@ void readImageAndSendMessage() {
     }
   }
 
-  if (count > 40) { //6.5% of entire image is "warm"
+  Serial.println(count);
+  Serial.print("...");
+  Serial.println(sqCount);
+  if (count > 5 && count < 600) { //6.5% of entire image is "warm"
     Serial.println("PEST DETECTED");
     size_t n = serializeJson(doc, test_buffer);
     client.beginPublish("/plant", n, false);
@@ -288,7 +298,7 @@ void readImageAndSendMessage() {
 }
 
 void send_blink() {
-  const char* startupPayload = "{\"type\": \"ping\", \"device_id\": 1, \"description\": \"just pinging\", \"battery\": 79}";
+  const char* startupPayload = "{\"type\": \"startup\", \"device_id\": 1, \"description\": \"pinging\", \"battery\": 79}";
   client.beginPublish("/plant", strlen(startupPayload), false);
   for (int i = 0; i < strlen(startupPayload); i ++) {
     client.write((uint8_t)startupPayload[i]);

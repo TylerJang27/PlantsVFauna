@@ -96,4 +96,8 @@
         </div>
     </main>
 
+    <form action="{{ url_for('index.threshold', device=device.device_id) }}">
+        <input type="submit" value="Go to Thresholds" />
+      </form>
+
 {% endblock %}

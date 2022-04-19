@@ -19,6 +19,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy import nullslast
 import glob
 import os
+import pytz
 import asyncio
 
 
@@ -50,7 +51,7 @@ def summary(page=0):
     with app.db.make_session() as session:
         try:
             # TODO: FIGURE OUT NEXT BUTTON
-            reports = session.query(Report).order_by(nullslast(Report.time.desc())).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
+            reports = session.query(Report).order_by(nullslast(Report.time.desc())).offset(page*PAGE_SIZE).limit(PAGE_SIZE).all()
             has_next = session.query(Report).order_by(nullslast(Report.time.desc())).count() > (page+1)*PAGE_SIZE
             has_prev = page > 0
             devices = [d.device_id for d in session.query(Device).all()]
@@ -65,6 +66,9 @@ def summary(page=0):
 
         except OperationalError:
             flash("SQL Error.")
+        for r in reports:
+            # r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Eastern"))
+            r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Pacific")).strftime('%Y-%m-%d %H:%M:%S')
         return render_template('summary.html', reports=reports, devices=devices, graph_loc=graph_loc, has_next=has_next, has_prev=has_prev, page=page)
 
 
@@ -106,7 +110,7 @@ def detail(device, page=0):
         return redirect("/login", code=302)
     with app.db.make_session() as session:
         try:
-            reports = session.query(Report).filter(Report.device_id == device).order_by(nullslast(Report.time.desc())).offset(page*PAGE_SIZE).limit(PAGE_SIZE)
+            reports = session.query(Report).filter(Report.device_id == device).order_by(nullslast(Report.time.desc())).offset(page*PAGE_SIZE).limit(PAGE_SIZE).all()
             has_next = session.query(Report).filter(Report.device_id == device).order_by(Report.time.desc()).count() > (page+1)*PAGE_SIZE
             has_prev = page > 0
         except OperationalError:
@@ -136,4 +140,7 @@ def detail(device, page=0):
             return redirect('/detail/{}/{}'.format(device_id, page))
         # TODO: FIX NUMBERING COLUMN
         img_path = get_img_path()
+        for r in reports:
+            # r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Eastern"))
+            r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Pacific")).strftime('%Y-%m-%d %H:%M:%S')
         return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page, img_path=img_path)

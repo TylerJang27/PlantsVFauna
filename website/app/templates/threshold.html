@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="section-header pb-6 text-black">
+  <div class="container">
+      <div class="row px-3 justify-content-center">
+          <div class="col-12 text-left mb-3 mt-4">
+              <div class="row"><h2>Plants V. Fauna</h2></div>
+              <div class="row" style="align-items: center;">
+                  <h1>Threshold</h1>
+              </div>
+              <!-- <div class="row"><p>Don't have an account, <a href="{{ url_for('users.register') }}">Sign up</a></p></div> -->
+          </div>
+      </div>
+  </div>
+</div>
+
+<div class="section section-md">
+  <div class="container">
+      <div class="row mb-5">
+        <div class="col">
+          <form action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <p>
+              {{ form.count_thresh.label }}<br/>
+              {{ form.count_thresh }}<br/>
+              {% for error in form.count_thresh.errors %}
+              <span style="color: red;">[{{ error }}]</span>
+              {% endfor %}
+            </p>
+            <p>
+              {{ form.min_thresh.label }}<br/>
+              {{ form.min_thresh }}<br/>
+              {% for error in form.min_thresh.errors %}
+              <span style="color: red;">[{{ error }}]</span>
+              {% endfor %}
+            </p>
+            <p>
+              {{ form.max_thresh.label }}<br/>
+              {{ form.max_thresh }}<br/>
+              {% for error in form.max_thresh.errors %}
+              <span style="color: red;">[{{ error }}]</span>
+              {% endfor %}
+            </p>
+            <p>
+              {{ form.color_thresh.label }}<br/>
+              {{ form.color_thresh }}<br/>
+              {% for error in form.color_thresh.errors %}
+              <span style="color: red;">[{{ error }}]</span>
+              {% endfor %}
+            </p>
+            <p>
+              {% with messages = get_flashed_messages() %}
+              {% if messages %}
+              <ul>
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% endwith %}
+            </p>
+            {{ form.submit(class_="btn btn-warning") }}
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form action="{{ url_for('index.detail', device=device) }}">
+  <input type="submit" value="Go to Detail" />
+</form>
+
+{% endblock %}

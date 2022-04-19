@@ -10,3 +10,4 @@ class Config(object):
                 os.environ.get('POSTGRES_PASSWORD'),
                 os.environ.get('POSTGRES_DB'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    AUTO_THRESH = os.environ.get('AUTO_THRESH')

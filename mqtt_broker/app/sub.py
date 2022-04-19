@@ -38,15 +38,21 @@ BATTERY_KEY = "battery"
 DESCRIPTION_KEY = "description"
 TIMESTAMP_KEY = "time"
 
+MINTEMP_KEY = "minTemp"
+MAXTEMP_KEY = "maxTemp"
+COUNT_KEY = "count"
+COLORINDEX_KEY = "colorIndex"
 
-def send_remote_status(client, device_id):
+
+def send_remote_status(client, device_id, count_thresh, min_thresh, max_thresh, color_thresh):
     with db.make_session() as session:
         device = session.query(Device).filter(Device.device_id == device_id).one_or_none()
         message_type = mt.power_on.name if device.remote_on else mt.power_off.name
         description = "refresh remote on" if device.remote_on else "refresh remote off"
         out = {DEVICE_KEY: device_id, TYPE_KEY: message_type,
                BATTERY_KEY: 0, DESCRIPTION_KEY: description,
-               TIMESTAMP_KEY: str(dt.now())}
+                TIMESTAMP_KEY: str(dt.now()), MINTEMP_KEY: min_thresh,
+                COUNT_KEY: count_thresh, MAXTEMP_KEY: max_thresh, COLORINDEX_KEY: color_thresh}
         json_obj = json.dumps(out)
 
         result = client.publish(topic, json_obj, qos=2)
@@ -104,8 +110,12 @@ def triage_message(userdata, msg, client):
             # Manual On
             device.manual_on = True
             print("DEVICE ALIVE")
-            if description != "pinging":
-                send_remote_status(client, device_id)
+            if description != "pinging" or True:
+                count_thresh = device.count_thresh
+                min_thresh = device.min_thresh
+                max_thresh = device.max_thresh
+                color_thresh = device.color_thresh
+                send_remote_status(client, device_id, count_thresh, min_thresh, max_thresh, color_thresh)
 
         elif type_enum == mt.shutdown:
             # Manual Off

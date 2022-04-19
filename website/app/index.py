@@ -67,8 +67,9 @@ def summary(page=0):
         except OperationalError:
             flash("SQL Error.")
         for r in reports:
-            # r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Eastern"))
-            r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Pacific")).strftime('%Y-%m-%d %H:%M:%S')
+            if r.time is not None:
+                # r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Eastern"))
+                r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Pacific")).strftime('%Y-%m-%d %H:%M:%S')
         return render_template('summary.html', reports=reports, devices=devices, graph_loc=graph_loc, has_next=has_next, has_prev=has_prev, page=page)
 
 
@@ -86,7 +87,7 @@ def get_img_path():
         for f in list_of_files:
             if f != latest_file and not os.path.basename(f).endswith(".json"):
                 if os.path.exists(f):
-                    # os.remove(f)
+                    os.remove(f)
                     print("Cleaned up", f)
                 else:
                     print("File does not exist", f)
@@ -101,6 +102,14 @@ def get_img_path():
         print("error finding image", e)
         return ""
 
+def send_thresholds(device):
+    device_id = device.device_id
+    count_thresh = device.count_thresh
+    min_thresh = device.min_thresh
+    max_thresh = device.max_thresh
+    color_thresh = device.color_thresh
+    parallel = ParalelAnnouncement(device_id, is_on, count_thresh, min_thresh, max_thresh, color_thresh)
+    parallel.start()
 
 @bp.route('/detail/<int:device>', methods=['GET', 'POST'])
 @bp.route('/detail/<int:device>/<int:page>', methods=['GET', 'POST'])
@@ -131,7 +140,11 @@ def detail(device, page=0):
             # TODO: MAKE ASYNC NEXT LINE
             # asyncio.create_task(send_announcement(device.device_id, is_on))
             # send_announcement(device.device_id, is_on)
-            parallel = ParalelAnnouncement(device.device_id, is_on)
+            count_thresh = device.count_thresh
+            min_thresh = device.min_thresh
+            max_thresh = device.max_thresh
+            color_thresh = device.color_thresh
+            parallel = ParalelAnnouncement(device.device_id, is_on, count_thresh, min_thresh, max_thresh, color_thresh)
             parallel.start()
 
             device.remote_on = is_on
@@ -141,6 +154,55 @@ def detail(device, page=0):
         # TODO: FIX NUMBERING COLUMN
         img_path = get_img_path()
         for r in reports:
-            # r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Eastern"))
-            r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Pacific")).strftime('%Y-%m-%d %H:%M:%S')
+            if r.time is not None:
+                # r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Eastern"))
+                r.time = r.time.replace(tzinfo=pytz.timezone("UTC")).astimezone(pytz.timezone("US/Pacific")).strftime('%Y-%m-%d %H:%M:%S')
         return render_template('detail.html', reports=reports, form=form, device=device, has_next=has_next, has_prev=has_prev, page=page, img_path=img_path)
+
+class ThresholdForm(FlaskForm):
+    count_thresh = IntegerField(_l('Hot Pixel Count Threshold (number pixels, rec: 10)'))
+    max_thresh = IntegerField(_l('Max Temperature Threshold (Celsius, rec: 35)'))
+    min_thresh = IntegerField(_l('Min Temperature Threshold (Celsius, rec: 15)'))
+    color_thresh = IntegerField(_l('Hot Pixel Temperature Threshold (0-99)'))
+    submit = SubmitField(_l('Submit'))
+
+@bp.route('/threshold/<int:device>', methods=['GET', 'POST'])
+def threshold(device):
+    device_id = device
+    if not current_user.is_authenticated:
+        return redirect("/login", code=302)
+    with app.db.make_session() as session:
+
+
+        form = ThresholdForm()
+        device = session.query(Device).filter(Device.device_id == device).one_or_none()
+        print("DEVICE ON:", device.remote_on)
+        if device is None:
+            return redirect("/summary", code=302)
+
+        if form.validate_on_submit():
+            print("PRE-SEND")
+
+            count_thresh = form.count_thresh.data
+            min_thresh = form.min_thresh.data
+            max_thresh = form.max_thresh.data
+            color_thresh = int(form.color_thresh.data*255/100)
+            parallel = ParalelAnnouncement(device.device_id, device.remote_on, count_thresh, min_thresh, max_thresh, color_thresh)
+            parallel.start()
+
+            device.count_thresh = count_thresh
+            device.min_thresh = min_thresh
+            device.max_thresh = max_thresh
+            device.color_thresh = color_thresh
+
+            session.add(device)
+            session.commit()
+            return redirect('/threshold/{}'.format(device_id))
+        # TODO: FIX NUMBERING COLUMN
+        
+        form.count_thresh.data = device.count_thresh
+        form.max_thresh.data = device.max_thresh
+        form.min_thresh.data = device.min_thresh
+        form.color_thresh.data = int(device.color_thresh*100/255)
+
+        return render_template('threshold.html', form=form, device=device_id)

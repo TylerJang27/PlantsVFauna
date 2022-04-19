@@ -11,6 +11,11 @@ class Device(Base):
     remote_on = Column(Boolean(), nullable=False)
     battery = Column(Integer(), nullable=False, default=100)
 
+    count_thresh = Column(Integer(), nullable=False, default=8)
+    min_thresh = Column(Integer(), nullable=False, default=19)
+    max_thresh = Column(Integer(), nullable=False, default=35)
+    color_thresh = Column(Integer(), nullable=False, default=90)
+
     reports = relationship("Report", back_populates="device")
 
     def __repr__(self):

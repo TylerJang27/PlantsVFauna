@@ -37,7 +37,18 @@ const char* MESSAGE_KEY_DESCRIPTION = "description";
 const char* MESSAGE_KEY_BATTERY = "battery";
 const char* MESSAGE_KEY_TIME = "time";
 
+const char* MESSAGE_KEY_MINTEMP = "minTemp";
+const char* MESSAGE_KEY_MAXTEMP = "maxTemp";
+const char* MESSAGE_KEY_COUNT = "count";
+const char* MESSAGE_KEY_COLORINDEX = "colorIndex";
+
+
 unsigned long previousTime = 0;
+
+int maxTempThresh = 35;
+int minTempThresh = 19;
+int colorIndexThresh = 90;
+int countThresh = 50;
 
 const char* willPayload = "{\"type\": \"shutdown\", \"device_id\": 1, \"description\": \"will message\", \"battery\": 10}";
 bool willRetain = true;
@@ -68,13 +79,13 @@ char test_buffer[16384];
 Adafruit_MLX90640 mlx;
 float frame[32 * 24]; // buffer for full frame of temperatures
 //int buffer_thermal[768];
-char buf[1000];
+char buf[2000];
 
 //low range of the sensor (this will be blue on the screen)
-int MINTEMP = 10;
+//int MINTEMP = minTempThresh;
 
 //high range of the sensor (this will be red on the screen)
-int MAXTEMP = 35;
+//int MAXTEMP = maxTempThresh;
 
 uint16_t displayPixelWidth, displayPixelHeight;
 
@@ -178,6 +189,7 @@ void attachMeta(int message_type) {
   doc[MESSAGE_KEY_DEVICE] = device_id;
   doc[MESSAGE_KEY_BATTERY] = battery;
   doc[MESSAGE_KEY_DESCRIPTION] = "hello hello!";
+  
   char* message_type_msg = "";
   if (message_type == 1) {
     message_type_msg = (char*)MESSAGE_TYPE_PEST;  // TODO: CHANGE TO REPORT AS NECESSARY
@@ -214,6 +226,17 @@ void parseJson() {
     } else if (in_message_type == compare_message_type2) {
       Serial.println("TURN OFF REMOTE");
       remote_on = false;
+    }
+    if (in_message_type == compare_message_type1 || in_message_type == compare_message_type2) {
+      minTempThresh = tempdoc[MESSAGE_KEY_MINTEMP];
+      maxTempThresh = tempdoc[MESSAGE_KEY_MAXTEMP];
+      countThresh = tempdoc[MESSAGE_KEY_COUNT];
+      colorIndexThresh = tempdoc[MESSAGE_KEY_COLORINDEX];
+    
+      Serial.print("minTemp..."); Serial.println(minTempThresh);
+      Serial.print("maxTemp..."); Serial.println(maxTempThresh);
+      Serial.print("count..."); Serial.println(countThresh);
+      Serial.print("colorIndex..."); Serial.println(colorIndexThresh);
     }
   }
 }
@@ -256,21 +279,21 @@ void readImageAndSendMessage() {
     for (uint8_t w = 0; w < 32; w++) {
       float t = frame[h * 32 + w];
 
-      if (t > MAXTEMP) {
-        t = MAXTEMP;
+      if (t > maxTempThresh) {
+        t = maxTempThresh;
       }
-      else if (t < MINTEMP) {
-        t = MINTEMP;
+      else if (t < minTempThresh) {
+        t = minTempThresh;
       }
 
       if (t > 15) {
         sqCount = sqCount + 1;
       }
-      uint8_t colorIndex = map(t, MINTEMP, MAXTEMP, 0, 255);
+      uint8_t colorIndex = map(t, minTempThresh, maxTempThresh, 0, 255);
 
       colorIndex = constrain(colorIndex, 0, 255);
 
-      if (colorIndex > 30) {
+      if (colorIndex > colorIndexThresh) {
         count = count + 1;
       }
 
@@ -281,7 +304,7 @@ void readImageAndSendMessage() {
   Serial.println(count);
   Serial.print("...");
   Serial.println(sqCount);
-  if (count > 5 && count < 600) { //6.5% of entire image is "warm"
+  if (count > countThresh && count < 600) { //6.5% of entire image is "warm"
     Serial.println("PEST DETECTED");
     size_t n = serializeJson(doc, test_buffer);
     client.beginPublish("/plant", n, false);
@@ -310,7 +333,10 @@ void send_blink() {
 void loop() {
   // reconnect behavior
   int status = WiFi.status();
-  Serial.print("Wifi status: "); Serial.println(status); // 3 is good
+  if (DEBUG_LEVEL >= 2) {
+    Serial.print("Wifi status: ");
+    Serial.println(status); // 3 is good
+  }
   if (status != WL_CONNECTED) {
     Serial.print("Attempting to reconnect to WiFi network");
     status = WiFi.begin(ssid);
@@ -321,6 +347,9 @@ void loop() {
   }
 
   if (!client.connected()) {
+    client.setKeepAlive(60);
+    client.setServer(mqttServer, mqttPort);
+    client.setCallback(callback);
     Serial.println("Connecting to MQTT...");
     if (client.connect("ESP32Client", mqttUser, mqttPassword, "/plant", willQos, willRetain, willPayload )) {
       Serial.println("MQTT connected");
@@ -332,7 +361,9 @@ void loop() {
       delay(2000);
     }
   } else {
-    Serial.println("Still connected to MQTT...");
+    if (DEBUG_LEVEL >= 2) {
+      Serial.println("Still connected to MQTT...");
+    }
     client.loop();
   }
 
@@ -340,6 +371,7 @@ void loop() {
 //  client.loop(); // TODO: TYLER IF TIMEOUT FAILS, THIS NEEDS TO BE RELOCATED
   if (remote_on) { // TODO: ADD MORE BOOLEANS AND LOGIC FOR ON STATUS remote_on
     if (digitalRead(33) == HIGH || digitalRead(12) == HIGH || digitalRead(21) == HIGH || digitalRead(27) == HIGH) {
+      Serial.println("PIR Triggered");
       uint32_t timestamp = millis();
       if (mlx.getFrame(frame) != 0) {
         Serial.println("Failed thermal");
